@@ -1,0 +1,131 @@
+<!-- Copy everything below this line -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+    <title>Historical Champions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* Disable touch gestures for game controls */
+      body {
+        touch-action: none;
+        overscroll-behavior: none;
+        user-select: none;
+        -webkit-user-select: none;
+        background-color: #000;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+      .text-stroke {
+          -webkit-text-stroke: 2px black;
+      }
+
+      /* PHYSICS ANIMATIONS */
+      @keyframes jumpArc {
+        0% { transform: translateY(0) scale(1); animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1); } /* Explosive start */
+        50% { transform: translateY(-25vh) scale(0.95); animation-timing-function: cubic-bezier(0.32, 0, 0.67, 0); } /* Hang time */
+        100% { transform: translateY(0) scale(1); } /* Fast landing */
+      }
+
+      .animate-jump-physics {
+        animation: jumpArc 0.5s forwards;
+      }
+
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+      }
+      
+      .animate-hit {
+        animation: shake 0.2s ease-in-out;
+      }
+
+      /* --- PORTRAIT WARNING OVERLAY --- */
+      #orientation-warning {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #000000;
+        z-index: 2147483647; /* Max z-index */
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        text-align: center;
+      }
+
+      .neon-text {
+        color: #fff;
+        font-family: monospace;
+        text-transform: uppercase;
+        font-weight: bold;
+        text-shadow: 
+          0 0 5px #fff,
+          0 0 10px #fff,
+          0 0 20px #fff,
+          0 0 40px #FFD700,
+          0 0 80px #FFD700,
+          0 0 90px #FFD700;
+        animation: flicker 1.5s infinite alternate;
+      }
+
+      @keyframes flicker {
+        0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; }
+        20%, 24%, 55% { opacity: 0.4; }
+      }
+
+      .rotate-icon {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 2rem;
+        border: 4px solid #fff;
+        border-radius: 10px;
+        animation: rotate-phone 2s infinite ease-in-out;
+      }
+
+      @keyframes rotate-phone {
+        0% { transform: rotate(0deg); width: 50px; height: 80px; }
+        50% { transform: rotate(90deg); width: 80px; height: 50px; }
+        100% { transform: rotate(0deg); width: 50px; height: 80px; }
+      }
+
+      /* STRICT Mobile Portrait Rules */
+      @media screen and (orientation: portrait) and (max-width: 1024px) {
+        #orientation-warning {
+          display: flex !important;
+        }
+        #root {
+          display: none !important;
+        }
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "@google/genai": "https://esm.sh/@google/genai@^1.39.0"
+  }
+}
+</script>
+</head>
+  <body>
+    <!-- PORTRAIT WARNING -->
+    <div id="orientation-warning">
+      <div class="rotate-icon"></div>
+      <h2 class="text-3xl font-bold mb-4 neon-text">CAUTION</h2>
+      <p class="text-white text-xl font-mono tracking-widest">PLEASE ROTATE DEVICE<br>TO LANDSCAPE</p>
+    </div>
+
+    <div id="root"></div>
+  </body>
+</html>
+<!-- Copy everything above this line -->

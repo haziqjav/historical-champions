@@ -1,0 +1,667 @@
+// Copy everything below this line
+import React, { useState, useEffect, useRef } from 'react';
+import { GoogleGenAI, Modality, GenerateContentResponse } from "@google/genai"; // Added Gemini imports
+import { ScreenState, PlayerState, CharacterId, BattleStats } from './types';
+import { loadGame, saveGame } from './services/gameService';
+import { soundManager } from './services/soundService';
+import { CHARACTERS, MUSIC_THEME, ARENAS, NARRATOR_CHRONICLE_VOICES, MATCHUP_INTRO_TEXTS, MATCHUP_INTRO_VOICES_URLS } from './constants';
+import { CharacterCard } from './components/CharacterCard';
+import { CombatScene } from './components/Combat/CombatScene';
+import { decode, decodeAudioData } from './services/audioUtils'; // Added audio utility imports
+import { User, Swords, ArrowLeft, Trophy, Youtube, ArrowUpDown, Volume2, VolumeX, Sparkles, Scroll, Keyboard, Zap, Shield, Radio, Skull, Speaker } from 'lucide-react'; // Added Speaker icon
+
+const App: React.FC = () => {
+  const [screen, setScreen] = useState<ScreenState>(ScreenState.MAIN_MENU);
+  const [playerState, setPlayerState] = useState<PlayerState>(loadGame());
+  const [selectedEnemy, setSelectedEnemy] = useState<CharacterId>(CharacterId.REYNALD);
+  const [isMusicMuted, setIsMusicMuted] = useState(soundManager.isMusicMuted);
+
+  // Story / Narrative State
+  const [storyText, setStoryText] = useState<string>("");
+  const [isTextLoading, setIsTextLoading] = useState(false);
+  const [narratorIntroAudioDuration, setNarratorIntroAudioDuration] = useState<number | null>(null);
+
+  // Battle Stats & Analysis
+  const [lastBattleStats, setLastBattleStats] = useState<BattleStats | null>(null);
+  const [battleChronicleText, setBattleChronicleText] = useState<string>("");
+  const [isChronicleLoading, setIsChronicleLoading] = useState(false); // Reintroduced for Gemini API call
+  const [generatedChronicleAudioBuffer, setGeneratedChronicleAudioBuffer] = useState<AudioBuffer | null>(null); // New state for Gemini TTS audio
+
+  // Sorting State
+  const [sortBy, setSortBy] = useState<'rarity' | 'name' | 'price_asc' | 'price_desc'>('rarity');
+
+  // Fix: Initialize useRef with null to prevent "used before declaration" error.
+  // Ref to store the last selected opponent to prevent immediate repeats
+  const lastOpponentIdRef = useRef<CharacterId | null>(null);
+
+  useEffect(() => {
+    saveGame(playerState);
+  }, [playerState]);
+
+  // Start background music and preload assets on app load
+  useEffect(() => {
+      soundManager.playTheme(MUSIC_THEME);
+      
+      // --- ASSET PRELOADING ---
+      setTimeout(() => {
+          ARENAS.forEach(arena => {
+              const img = new Image();
+              img.src = arena.image;
+          });
+          Object.values(CHARACTERS).forEach(char => {
+              new Image().src = char.imageSrc;
+              new Image().src = char.attackImageSrc;
+              new Image().src = char.portraitSrc;
+              if (char.voiceSrc) {
+                  soundManager.preloadVoice(char.voiceSrc);
+              }
+          });
+          // Preload narrator voices (all specific intro voices and all generic chronicle voices)
+          // Fix: Explicitly cast Object.values and NARRATOR_CHRONICLE_VOICES to string[]
+          soundManager.preloadNarratorVoices([
+              ...(Object.values(MATCHUP_INTRO_VOICES_URLS) as string[]), 
+              ...(NARRATOR_CHRONICLE_VOICES as string[])
+          ]);
+      }, 100);
+  }, []);
+
+  const toggleMusic = () => {
+      const newMutedState = soundManager.toggleMusic();
+      setIsMusicMuted(newMutedState);
+      soundManager.playSelect();
+  };
+
+  const handleCardClick = (charId: CharacterId) => {
+    const charData = CHARACTERS[charId];
+    if (charData.voiceSrc) {
+        soundManager.playCharacterVoice(charData.voiceSrc);
+    } else {
+        soundManager.playSelect();
+    }
+    setPlayerState(prev => ({ ...prev, selectedCharacterId: charId }));
+  };
+
+  // --- LOCAL TEXT & NARRATION (NO API, PRE-RECORDED AUDIO) ---
+  const getMatchupData = (pCharId: CharacterId, eCharId: CharacterId): { text: string; voiceUrl: string } => {
+      // Create a consistent key by sorting character IDs
+      const sortedIds = [pCharId, eCharId].sort();
+      const key = `${sortedIds[0]}-${sortedIds[1]}`;
+      
+      const text = MATCHUP_INTRO_TEXTS[key] || `A fierce battle is about to commence between ${CHARACTERS[pCharId].name} and ${CHARACTERS[eCharId].name}.`;
+      const voiceUrl = MATCHUP_INTRO_VOICES_URLS[key] || NARRATOR_CHRONICLE_VOICES[0]; // Fallback to a generic voice if specific not found
+      
+      return { text, voiceUrl };
+  };
+
+  // Removed getLocalChronicleText, now Gemini will generate it.
+
+  const generateGeminiChronicle = async (stats: BattleStats) => {
+      setIsChronicleLoading(true); // Start loading state for the chronicle section
+      setBattleChronicleText(""); // Clear previous text
+      setGeneratedChronicleAudioBuffer(null); // Clear previous audio
+      
+      const winner = CHARACTERS[stats.winnerId];
+      const loser = CHARACTERS[stats.loserId];
+
+      // IMPROVED PROMPT: More explicit about narrative quality and completeness
+      const prompt = `You are a seasoned historian, known for your dramatic and insightful recounts of legendary duels. Write a vivid, impactful, and complete war chronicle (ensure it's a flowing narrative of 3 to 5 distinct, well-formed sentences) about a pivotal battle between ${winner.name} and ${loser.name}. The formidable ${winner.name} achieved a decisive victory, retaining ${stats.remainingHpPercentage}% health and demonstrating masterful combat with a remarkable ${stats.maxCombo}-hit combo. This fierce engagement concluded after ${stats.durationSeconds} seconds. Narrate this triumph with a tone that highlights the victor's enduring legacy, the profound drama of the conflict, and its lasting impact on the annals of history. Ensure all sentences are grammatically complete and the narrative concludes gracefully without truncation.`;
+
+      let generatedText = "";
+      let generatedAudioBuffer: AudioBuffer | null = null;
+      let ai: GoogleGenAI | null = null;
+
+      const FALLBACK_CHRONICLES = [
+        `In a clash of steel and will, ${winner.name} emerged victorious, proving their legendary strength against ${loser.name}. The echoes of this battle shall forever resonate through time. Such valor etches their name firmly in history's grand tapestry.`,
+        `The dust settles on the battlefield as ${winner.name} stands triumphant, having bested ${loser.name} in honorable combat. A new chapter is written, etched in the annals of glory, proclaiming their undeniable might.`,
+        `History will forever remember this day, where ${winner.name} overcame the might of ${loser.name} through skill and determination. Such valor secures their place among the legends, inspiring all who hear their tale.`
+      ];
+
+      try {
+          // Fix: Initialize GoogleGenAI right before making an API call to ensure it always uses the most up-to-date API key.
+          ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' }); 
+          if (!ai || !process.env.API_KEY) {
+            throw new Error("Gemini API key not configured or AI instance failed to initialize.");
+          }
+
+          // 1. Generate text chronicle
+          const textResponse: GenerateContentResponse = await ai.models.generateContent({
+              model: 'gemini-3-flash-preview',
+              contents: [{ parts: [{ text: prompt }] }],
+              config: {
+                temperature: 0.9,
+                topP: 0.95,
+                topK: 64,
+                maxOutputTokens: 500, // Increased max output tokens for even more detail and completeness
+              }
+          });
+          
+          let rawGeminiText = textResponse.text || "";
+          console.log("Gemini Generated Text (Raw API Response):", rawGeminiText); // Debugging Gemini output
+
+          // Client-side validation for completeness
+          if (rawGeminiText.length < 100 || !/[.!?]$/.test(rawGeminiText.trim())) {
+              console.warn("Gemini output appears incomplete or too short. Falling back to local chronicle.");
+              generatedText = FALLBACK_CHRONICLES[Math.floor(Math.random() * FALLBACK_CHRONICLES.length)];
+          } else {
+              generatedText = rawGeminiText;
+          }
+          
+          setBattleChronicleText(generatedText); // Update text immediately
+
+          // 2. Generate speech for the chronicle
+          const speechResponse: GenerateContentResponse = await ai.models.generateContent({
+              model: "gemini-2.5-flash-preview-tts",
+              contents: [{ parts: [{ text: generatedText }] }],
+              config: {
+                  responseModalities: [Modality.AUDIO],
+                  speechConfig: {
+                      voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } }, // Using 'Zephyr' for a strong narrator voice
+                  },
+              },
+          });
+          const base64Audio = speechResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+          
+          if (base64Audio) {
+              const audioContext = soundManager.getAudioContext(); // Get the AudioContext from soundManager
+              if (audioContext) {
+                  const decodedBytes = decode(base64Audio);
+                  generatedAudioBuffer = await decodeAudioData(decodedBytes, audioContext, 24000, 1);
+                  setGeneratedChronicleAudioBuffer(generatedAudioBuffer);
+              }
+          }
+
+      } catch (error) {
+          console.error("Gemini API error during chronicle generation:", error);
+          // Fallback to local text if API fails
+          generatedText = FALLBACK_CHRONICLES[Math.floor(Math.random() * FALLBACK_CHRONICLES.length)];
+          setBattleChronicleText(generatedText);
+      } finally {
+          setIsChronicleLoading(false); // End loading state
+      }
+  };
+
+  const startCombatSequence = async () => {
+    soundManager.playSelect();
+    soundManager.stopVoice();
+    
+    const allPossibleOpponents = Object.values(CHARACTERS).filter(c => c.id !== playerState.selectedCharacterId);
+    let availableOpponents = [...allPossibleOpponents];
+    
+    let nextEnemyId: CharacterId;
+
+    // Logic to prevent immediate repeats if possible
+    if (lastOpponentIdRef.current && availableOpponents.length > 1) {
+        const filteredForRepeat = availableOpponents.filter(c => c.id !== lastOpponentIdRef.current);
+        if (filteredForRepeat.length > 0) {
+            nextEnemyId = filteredForRepeat[Math.floor(Math.random() * filteredForRepeat.length)].id;
+        } else {
+            nextEnemyId = availableOpponents[0].id; 
+        }
+    } else if (availableOpponents.length > 0) {
+        nextEnemyId = availableOpponents[Math.floor(Math.random() * availableOpponents.length)].id;
+    } else {
+        console.error("No available opponents for selection!");
+        nextEnemyId = CharacterId.REYNALD; // Default fallback for safety
+    }
+
+    setSelectedEnemy(nextEnemyId);
+    lastOpponentIdRef.current = nextEnemyId;
+
+    setStoryText("");
+    setBattleChronicleText("");
+    setLastBattleStats(null);
+    setIsTextLoading(true); 
+    setNarratorIntroAudioDuration(null);
+
+    const { text: introText, voiceUrl: introVoiceUrl } = getMatchupData(playerState.selectedCharacterId, nextEnemyId);
+    setStoryText(introText);
+    
+    const audioElement = soundManager.playNarratorVoice(introVoiceUrl);
+    if (audioElement) {
+        setNarratorIntroAudioDuration(audioElement.duration * 1000); 
+    }
+
+    setScreen(ScreenState.STORY_INTRO);
+    setIsTextLoading(false);
+  };
+
+  const handleCombatEnd = (victory: boolean, stats: BattleStats) => {
+    soundManager.stopVoice();
+    setLastBattleStats(stats);
+    setScreen(victory ? ScreenState.VICTORY : ScreenState.DEFEAT);
+    generateGeminiChronicle(stats); // Trigger Gemini chronicle generation
+  };
+
+  const handleReturnToRoster = () => {
+    soundManager.playSelect(); // Play UI sound on click
+    
+    let audioDuration = 0; // Default duration if no specific audio is played
+    const bufferTime = 500; // Small buffer after audio finishes
+
+    if (generatedChronicleAudioBuffer) {
+        soundManager.playGeneratedAudio(generatedChronicleAudioBuffer); // Start playing narration
+        audioDuration = generatedChronicleAudioBuffer.duration * 1000; // Get duration in milliseconds
+    } else {
+        const randomChronicleVoiceUrl = NARRATOR_CHRONICLE_VOICES[Math.floor(Math.random() * NARRATOR_CHRONICLE_VOICES.length)];
+        const audio = soundManager.playNarratorVoice(randomChronicleVoiceUrl);
+        if (audio) {
+            audioDuration = audio.duration * 1000; // Get duration in milliseconds
+        }
+    }
+
+    // Delay transition by the actual audio duration + a buffer
+    // Ensure minimum delay even if audioDuration is 0 (e.g., if audio fails to load)
+    const delayMs = Math.max(1000, audioDuration + bufferTime); 
+
+    setTimeout(() => {
+        soundManager.playTheme(MUSIC_THEME); // Resume theme after narration and transition
+        setScreen(ScreenState.CHARACTER_SELECT);
+    }, delayMs);
+  };
+
+  const getVisibleCharacters = () => {
+    let chars = Object.values(CHARACTERS);
+    chars.sort((a, b) => {
+      switch (sortBy) {
+        case 'name': return a.name.localeCompare(b.name);
+        case 'price_asc': return a.price - b.price;
+        case 'price_desc': return b.price - a.price;
+        case 'rarity':
+        default:
+          if (a.rarity !== b.rarity) return b.rarity - a.rarity;
+          return a.name.localeCompare(b.name);
+      }
+    });
+    return chars;
+  };
+
+  // --- VIEW: STORY INTRO ---
+  if (screen === ScreenState.STORY_INTRO) {
+      const pChar = CHARACTERS[playerState.selectedCharacterId];
+      const eChar = CHARACTERS[selectedEnemy];
+
+      return (
+          <NarrativeScreen 
+              player={pChar} 
+              enemy={eChar} 
+              text={storyText} 
+              isTextLoading={isTextLoading}
+              narratorAudioDuration={narratorIntroAudioDuration} // Pass duration for intro screen timing
+              onSkip={() => {
+                  soundManager.stopVoice();
+                  soundManager.stopTheme(500);
+                  setScreen(ScreenState.COMBAT);
+              }}
+              onComplete={() => {
+                   soundManager.stopVoice();
+                   soundManager.stopTheme(1500);
+                   setScreen(ScreenState.COMBAT);
+              }}
+          />
+      );
+  }
+
+  // --- MAIN MENU ---
+  if (screen === ScreenState.MAIN_MENU) {
+    return (
+      <div className="h-[100dvh] w-full bg-slate-950 flex flex-col items-center justify-center text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://i.ibb.co/sdHvxJB9/Hattin.jpg')] bg-cover opacity-20 scale-110 blur-sm"></div>
+        <div className="relative z-10 text-center px-4">
+            <h1 className="text-5xl md:text-9xl font-black mb-4 text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 via-yellow-600 to-yellow-900 drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)] leading-none italic">
+                HISTORICAL<br/>CHAMPIONS
+            </h1>
+            <p className="text-yellow-500 font-serif text-lg md:text-2xl tracking-[0.3em] md:tracking-[0.5em] mb-8 md:mb-12 uppercase italic">Legacy of the Crusades</p>
+            <button 
+              onClick={() => { soundManager.playSelect(); setScreen(ScreenState.CHARACTER_SELECT); }}
+              className="px-10 py-4 md:px-16 md:py-6 bg-red-700 text-xl md:text-3xl font-black rounded-sm border-b-4 border-red-900 shadow-[0_0_30px_rgba(185,28,28,0.5)] hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
+            >
+              BATTLE NOW
+            </button>
+        </div>
+        
+        <div className="absolute bottom-6 flex flex-col items-center gap-3 z-20">
+            <div className="flex items-center gap-2 text-slate-400 font-bold tracking-widest text-xs md:text-sm">
+                <span>© 2025 TUBE HJ GAMES.</span>
+                <span className="hidden md:inline">ALL RIGHTS RESERVED.</span>
+            </div>
+            
+            <a 
+              href="https://www.youtube.com/@Tube_HJ" 
+              target="_blank" 
+              rel="noreferrer" 
+              className="group flex items-center gap-2 bg-red-600/20 hover:bg-red-600/40 border border-red-900/50 px-4 py-2 rounded-full transition-all cursor-pointer hover:scale-105"
+            >
+                <div className="bg-red-600 text-white p-1 rounded-sm group-hover:bg-red-500 transition-colors">
+                  <Youtube size={16} fill="currentColor" />
+                </div>
+                <span className="font-bold text-red-100 text-sm tracking-wider">@Tube_HJ</span>
+            </a>
+            
+            <p className="text-slate-600 font-mono text-[10px] tracking-widest mt-1">PROTOTYPE BUILD V3.9</p>
+            
+            <button 
+                onClick={toggleMusic} 
+                className="mt-4 p-2 bg-black/40 hover:bg-black/60 rounded-full border border-slate-700 transition-colors"
+                title={isMusicMuted ? "Unmute Music" : "Mute Music"}
+            >
+                {isMusicMuted ? <VolumeX size={20} className="text-slate-400" /> : <Volume2 size={20} className="text-yellow-500" />}
+            </button>
+        </div>
+      </div>
+    );
+  }
+
+  // --- VICTORY / DEFEAT ---
+  if (screen === ScreenState.VICTORY || screen === ScreenState.DEFEAT) {
+      const isWin = screen === ScreenState.VICTORY;
+      return (
+          <div className="h-[100dvh] w-full bg-slate-900 flex flex-col items-center justify-center text-white p-8 relative overflow-hidden">
+              <div className="absolute inset-0 bg-black/50 z-0"></div>
+              
+              <div className="z-10 flex flex-col items-center max-w-2xl w-full">
+                  {isWin ? <Trophy size={80} className="text-yellow-400 mb-6 animate-bounce" /> : <Skull size={80} className="text-red-600 mb-6" />}
+                  <h2 className={`text-6xl md:text-8xl font-black italic uppercase mb-2 drop-shadow-lg ${isWin ? 'text-yellow-500' : 'text-slate-500'}`}>
+                      {isWin ? 'Victory' : 'Defeated'}
+                  </h2>
+                  
+                  {/* WAR CHRONICLE (GEMINI AI ANALYSIS) */}
+                  <div className="w-full bg-black/60 border-y-2 border-yellow-600/30 p-6 my-8 backdrop-blur-sm rounded-lg min-h-[120px] flex flex-col items-center justify-center">
+                      <div className="flex items-center gap-2 text-yellow-500 mb-2 opacity-70">
+                          <Scroll size={16} />
+                          <span className="text-xs uppercase tracking-[0.3em]">War Chronicle (Gemini AI)</span>
+                          {generatedChronicleAudioBuffer && !isChronicleLoading && (
+                            <Speaker size={16} className="text-yellow-400 ml-1" title="Narration will play on 'Return to Roster' click"/>
+                          )}
+                      </div>
+                      
+                      {isChronicleLoading ? (
+                          <div className="flex items-center gap-2 text-slate-500 animate-pulse">
+                              <Sparkles size={16} />
+                              <span className="text-sm font-mono uppercase">Generating Chronicle with Gemini...</span>
+                          </div>
+                      ) : (
+                          <p className="text-lg md:text-2xl font-serif text-slate-200 text-center leading-relaxed italic animate-in fade-in slide-in-from-bottom-4">
+                              "{battleChronicleText}"
+                          </p>
+                      )}
+                  </div>
+
+                  <button 
+                      onClick={handleReturnToRoster}
+                      className="px-12 py-4 bg-slate-100 text-slate-900 text-2xl font-black rounded hover:bg-white transition-colors uppercase tracking-widest"
+                  >
+                      Return to Roster
+                  </button>
+              </div>
+          </div>
+      );
+  }
+
+  // --- COMBAT ---
+  if (screen === ScreenState.COMBAT) {
+      return (
+          <div className="h-[100dvh] w-full relative overflow-hidden">
+              <CombatScene 
+                playerCharacterId={playerState.selectedCharacterId}
+                enemyCharacterId={selectedEnemy}
+                onBattleEnd={handleCombatEnd}
+              />
+          </div>
+      )
+  }
+
+  const selectedCharData = CHARACTERS[playerState.selectedCharacterId];
+  const visibleCharacters = getVisibleCharacters();
+
+  // --- CHARACTER SELECT ---
+  return (
+    <div className="fixed inset-0 h-[100dvh] w-full bg-[#0a0f1a] flex flex-col text-white font-sans overflow-hidden">
+      {/* Top Bar */}
+      <div className="shrink-0 h-14 md:h-20 bg-gradient-to-r from-slate-900 to-slate-800 border-b-2 border-yellow-900/30 flex items-center justify-between px-2 md:px-8 z-20 shadow-2xl">
+        <div className="flex items-center gap-2 md:gap-6">
+            <button onClick={() => setScreen(ScreenState.MAIN_MENU)} className="p-1.5 md:p-3 bg-slate-800 hover:bg-slate-700 rounded-md border border-slate-600">
+                <ArrowLeft className="w-4 h-4 md:w-6 md:h-6" />
+            </button>
+            <h2 className="text-sm md:text-2xl font-black italic tracking-widest text-yellow-500 uppercase">Select Champion</h2>
+        </div>
+        
+        <div className="flex items-center gap-1 md:gap-4">
+            <button 
+                onClick={toggleMusic}
+                className="p-1.5 md:p-2 bg-black/40 hover:bg-black/60 rounded-sm border border-slate-700 transition-colors mr-1"
+                title={isMusicMuted ? "Unmute Music" : "Mute Music"}
+            >
+                {isMusicMuted ? <VolumeX className="w-4 h-4 md:w-5 md:h-5 text-slate-400" /> : <Volume2 className="w-4 h-4 md:w-5 md:h-5 text-yellow-500" />}
+            </button>
+            
+            <div className="hidden md:flex items-center gap-3 bg-black/40 px-6 py-2 rounded-sm border border-blue-500/50">
+                <User size={24} className="text-blue-400" />
+                <span className="font-black text-2xl text-white">{visibleCharacters.length}</span>
+            </div>
+        </div>
+      </div>
+
+      <div className="flex-1 flex min-h-0 overflow-hidden">
+         {/* Left Panel */}
+         <div className="w-[40%] md:w-[35%] bg-gradient-to-b from-slate-900 via-slate-950 to-black border-r border-yellow-900/20 flex flex-col shrink-0">
+            <div className="flex-1 relative flex flex-col items-center justify-center p-4 min-h-0">
+                 <div className="absolute top-2 md:top-10 text-center animate-in slide-in-from-top duration-500 z-10 w-full">
+                    <h3 className="text-lg md:text-5xl font-black uppercase text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate px-1">{selectedCharData.name}</h3>
+                    <p className="text-yellow-500 font-serif italic text-[10px] md:text-lg truncate px-2">{selectedCharData.title}</p>
+                 </div>
+                 
+                 <div className="w-full h-full flex items-center justify-center pt-8 md:pt-20 pb-2">
+                     <img 
+                        key={selectedCharData.id}
+                        src={selectedCharData.imageSrc} 
+                        className="max-h-full max-w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.9)] animate-in zoom-in duration-300" 
+                        alt="Hero" 
+                    />
+                 </div>
+            </div>
+
+            <div className="bg-slate-900/90 p-2 md:p-8 border-t border-slate-800 backdrop-blur-lg shrink-0">
+                <div className="grid grid-cols-2 gap-1 md:gap-3 mb-2 md:mb-6">
+                    <StatItem label="Health" value={selectedCharData.baseStats.health} color="text-green-400" />
+                    <StatItem label="Attack" value={selectedCharData.baseStats.attack} color="text-red-400" />
+                    <StatItem label="Defense" value={selectedCharData.baseStats.defense} color="text-blue-400" />
+                    <StatItem label="Crit" value={`${(selectedCharData.baseStats.critChance * 100).toFixed(0)}%`} color="text-yellow-400" />
+                </div>
+                
+                {/* Always show Fight Button - Everything is unlocked */}
+                <button 
+                    onClick={startCombatSequence}
+                    className="w-full bg-gradient-to-b from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 text-white font-black py-2 md:py-4 rounded-sm text-sm md:text-xl uppercase tracking-widest shadow-[0_5px_15px_rgba(220,38,38,0.4)] active:scale-95 transition-all flex items-center justify-center gap-2 md:gap-3 border-b-4 border-red-950"
+                >
+                    <Swords className="w-4 h-4 md:w-7 md:h-7" /> Fight
+                </button>
+            </div>
+         </div>
+
+         {/* Right Panel */}
+         <div className="flex-1 flex flex-col min-h-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]">
+             <div className="flex-1 overflow-y-auto p-2 md:p-8">
+                <div className="flex flex-col gap-2 mb-2 md:mb-6 lg:flex-row lg:items-center lg:justify-between bg-black/40 p-2 md:p-4 rounded-sm border border-slate-700 shadow-md">
+                    {/* Simplified Filter/Sort - Removed Ownership Toggle */}
+                    <div className="flex items-center gap-2 md:gap-3 ml-auto">
+                        <ArrowUpDown size={12} className="text-yellow-500" />
+                        <span className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-wider">Sort:</span>
+                        <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value as any)}
+                            className="bg-slate-900 border border-slate-600 text-white text-[10px] md:text-xs font-bold uppercase rounded px-1 py-1 md:px-3 md:py-2 focus:outline-none focus:border-yellow-500 hover:bg-slate-800 transition-colors cursor-pointer"
+                        >
+                            <option value="rarity">Rarity</option>
+                            <option value="name">Name</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-4 pb-12">
+                    {visibleCharacters.length > 0 ? (
+                        visibleCharacters.map(char => (
+                            <CharacterCard 
+                            key={char.id}
+                            character={char}
+                            isUnlocked={true} // Always Unlocked
+                            isSelected={playerState.selectedCharacterId === char.id}
+                            onClick={() => handleCardClick(char.id)}
+                            />
+                        ))
+                    ) : (
+                        <div className="col-span-full h-32 flex items-center justify-center text-slate-500 italic">
+                            No champions found.
+                        </div>
+                    )}
+                </div>
+             </div>
+
+             <div className="hidden md:flex shrink-0 bg-slate-900/90 border-t border-yellow-900/30 p-2 lg:p-3 items-center justify-center gap-4 lg:gap-8 backdrop-blur-md z-10 shadow-2xl">
+                <div className="flex items-center gap-2 text-slate-500 font-bold text-xs tracking-widest uppercase mr-2 border-r border-slate-700 pr-4">
+                    <Keyboard size={16} /> Game Controls
+                </div>
+                <div className="flex items-center gap-3 group">
+                     <div className="flex gap-1">
+                        <KeyCap>A</KeyCap>
+                        <KeyCap>W</KeyCap>
+                        <KeyCap>D</KeyCap>
+                     </div>
+                     <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest group-hover:text-yellow-400 transition-colors">Move</span>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Jump</span>
+                     </div>
+                </div>
+                <div className="w-px h-6 bg-slate-700"></div>
+                <div className="flex items-center gap-3 group">
+                    <KeyCap>J</KeyCap>
+                    <span className="text-[10px] font-bold text-red-400 uppercase tracking-widest group-hover:text-red-300 transition-colors flex items-center gap-1">
+                        <Swords size={12} /> Attack
+                    </span>
+                </div>
+                <div className="w-px h-6 bg-slate-700"></div>
+                <div className="flex items-center gap-3 group">
+                     <KeyCap>K</KeyCap>
+                     <span className="text-[10px] font-bold text-yellow-500 uppercase tracking-widest group-hover:text-yellow-300 transition-colors flex items-center gap-1">
+                        <Zap size={12} className="fill-yellow-500" /> Special
+                     </span>
+                </div>
+                <div className="w-px h-6 bg-slate-700"></div>
+                <div className="flex items-center gap-3 group">
+                     <KeyCap>L</KeyCap>
+                     <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest group-hover:text-blue-300 transition-colors flex items-center gap-1">
+                        <Shield size={12} className="fill-blue-500" /> Block
+                     </span>
+                </div>
+             </div>
+         </div>
+      </div>
+    </div>
+  );
+};
+
+// --- SUB-COMPONENT: NARRATIVE SCREEN ---
+const NarrativeScreen: React.FC<{ 
+    player: any, 
+    enemy: any, 
+    text: string, 
+    isTextLoading: boolean,
+    narratorAudioDuration: number | null, // New prop to receive audio duration
+    onSkip: () => void,
+    onComplete: () => void 
+}> = ({ player, enemy, text, isTextLoading, narratorAudioDuration, onSkip, onComplete }) => { 
+    
+    const hasPlayedRef = useRef(false);
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(typeof window !== 'undefined' ? null : undefined); // Initialize as undefined in SSR to avoid global state issues
+
+    // EFFECT: Set timer for completion based on audio duration
+    useEffect(() => {
+        // Only set the timer once, after text is loaded and audio duration is known
+        if (!isTextLoading && !hasPlayedRef.current && narratorAudioDuration !== null) {
+            hasPlayedRef.current = true;
+            
+            // Use actual audio duration + a small buffer (e.g., 500ms)
+            const bufferTime = 500; // milliseconds
+            timeoutRef.current = setTimeout(onComplete, narratorAudioDuration + bufferTime);
+        }
+    }, [isTextLoading, text, narratorAudioDuration, onComplete]); // Depend on audio duration and onComplete
+
+    useEffect(() => {
+        return () => {
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            // Ensure any ongoing browser speech synthesis is cancelled, just in case
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
+            soundManager.stopVoice(); // Stop any pre-recorded narrator voice
+        };
+    }, []); // Empty dependency array, cleanup only on unmount
+
+    return (
+        <div className="h-[100dvh] w-full bg-black relative flex flex-col overflow-hidden">
+            {/* Split Background */}
+            <div className="absolute inset-0 flex">
+                <div className="w-1/2 bg-blue-950/40 relative overflow-hidden border-r-4 border-yellow-500/50">
+                    <img src={player.imageSrc} className="absolute bottom-0 left-0 w-full h-[90%] object-contain object-left-bottom opacity-60 mix-blend-screen scale-110" />
+                </div>
+                <div className="w-1/2 bg-red-950/40 relative overflow-hidden">
+                    <img src={enemy.imageSrc} className="absolute bottom-0 right-0 w-full h-[90%] object-contain object-right-bottom opacity-60 mix-blend-screen scale-110 scale-x-[-1]" />
+                </div>
+            </div>
+
+            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
+                <span className="text-9xl font-black text-yellow-500 italic drop-shadow-[0_0_50px_rgba(234,179,8,0.8)] stroke-black text-stroke">VS</span>
+            </div>
+
+            <div className="absolute top-10 left-10 z-20 animate-in slide-in-from-left duration-700">
+                <h2 className="text-4xl font-black text-blue-200 uppercase italic">{player.name}</h2>
+            </div>
+             <div className="absolute bottom-40 right-10 z-20 animate-in slide-in-from-right duration-700 text-right">
+                <h2 className="text-4xl font-black text-red-200 uppercase italic">{enemy.name}</h2>
+            </div>
+
+            {/* Narrative Box */}
+            <div className="absolute bottom-0 w-full min-h-[30%] bg-gradient-to-t from-black via-black/90 to-transparent p-6 flex flex-col items-center justify-end z-30 pb-12">
+                {isTextLoading ? (
+                    <div className="flex items-center gap-3 text-yellow-500 animate-pulse">
+                        <Sparkles size={24} />
+                        <span className="font-serif text-xl tracking-widest uppercase">Consulting the Chronicles...</span>
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center gap-4 w-full">
+                        <div className="max-w-4xl text-center animate-in fade-in duration-300">
+                            <Scroll className="mx-auto text-slate-500 mb-2 w-8 h-8 opacity-50" />
+                            <p className="font-serif text-xl md:text-3xl text-yellow-100 leading-relaxed italic drop-shadow-md">
+                                "{text}"
+                            </p>
+                        </div>
+                    </div>
+                )}
+                
+                <button 
+                    onClick={onSkip}
+                    className="mt-6 text-slate-500 hover:text-white text-xs uppercase tracking-[0.2em] border border-slate-700 px-4 py-2 rounded-full hover:bg-slate-800 transition-colors"
+                >
+                    Skip Intro
+                </button>
+            </div>
+        </div>
+    );
+};
+
+const StatItem = ({ label, value, color }: { label: string, value: string | number, color: string }) => (
+    <div className="bg-black/40 border border-slate-800 p-1 md:p-2 rounded-sm flex flex-col">
+        <span className="text-[8px] md:text-[10px] text-slate-500 uppercase font-black tracking-widest">{label}</span>
+        <span className={`${color} font-black text-xs md:text-lg`}>{value}</span>
+    </div>
+);
+
+const KeyCap = ({ children, className = '' }: { children?: React.ReactNode, className?: string }) => (
+    <div className={`
+        h-6 min-w-[1.5rem] px-1 bg-slate-800 border-b-2 border-slate-950 rounded text-slate-200 
+        font-mono font-bold text-[10px] flex items-center justify-center shadow-sm 
+        group-hover:translate-y-0.5 group-hover:border-b-0 group-hover:bg-slate-700 transition-all ${className}
+    `}>
+        {children}
+    </div>
+);
+
+export default App;
+// Copy everything above this line

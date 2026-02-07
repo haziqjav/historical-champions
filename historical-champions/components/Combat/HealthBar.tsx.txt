@@ -1,0 +1,47 @@
+// Copy everything below this line
+import React from 'react';
+
+interface Props {
+  current: number;
+  max: number;
+  isEnemy?: boolean;
+  name: string;
+  avatar: string;
+}
+
+// Using React.memo to prevent unnecessary re-renders of the HealthBar 
+// when other parts of the combat state (like position) change.
+export const HealthBar: React.FC<Props> = React.memo(({ current, max, isEnemy = false, name, avatar }) => {
+  const percent = Math.max(0, Math.min(100, (current / max) * 100));
+
+  return (
+    <div className={`flex items-center gap-2 w-full max-w-md ${isEnemy ? 'flex-row-reverse' : ''}`}>
+      {/* Avatar */}
+      <div className={`w-14 h-14 rounded-full border-2 border-yellow-500 overflow-hidden shrink-0 bg-slate-800 relative z-10 shadow-lg`}>
+        <img src={avatar} alt={name} className="w-full h-full object-cover" />
+      </div>
+
+      <div className="flex-1 flex flex-col gap-1">
+        <div className={`flex justify-between text-xs font-bold uppercase text-white tracking-wider ${isEnemy ? 'flex-row-reverse' : ''}`}>
+          <span>{name}</span>
+          <span>{Math.floor(current)} / {max}</span>
+        </div>
+        
+        {/* HP Bar Container */}
+        <div className={`h-4 w-full bg-slate-900/80 rounded-sm skew-x-[-15deg] border border-slate-600 overflow-hidden relative`}>
+            {/* Damage Tick (visual flair) */}
+            <div 
+                className={`absolute top-0 bottom-0 bg-red-800 transition-all duration-500 ease-out`}
+                style={{ width: `${percent}%`, [isEnemy ? 'right' : 'left']: 0 }}
+            />
+            {/* Actual HP */}
+            <div 
+                className={`absolute top-0 bottom-0 ${isEnemy ? 'bg-red-500' : 'bg-green-500'} transition-all duration-200 ease-linear`}
+                style={{ width: `${percent}%`, [isEnemy ? 'right' : 'left']: 0 }}
+            />
+        </div>
+      </div>
+    </div>
+  );
+});
+// Copy everything above this line
