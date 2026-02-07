@@ -148,7 +148,7 @@ Implemented responsive design
 ```bash
 🖼️ Screenshots
 
-/screenshots/gameplay.png.jpg
+/screenshots/HOMEPAGE.jpg
 /screenshots/combat.png.jpg
 /screenshots/narration.png.jpg
 
