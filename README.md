@@ -4,7 +4,7 @@ Historical Champions is a cinematic, AI-powered 2.5D fighting game that blends h
 
 🚀 Live Demo
 
-Click here to play the game
+Click here to play the game : https://ai.studio/apps/drive/1H2Gs5nNhVRDBf2ybO48iWtcfOSPp18ns
 
 ✨ Key Features
 
@@ -54,4 +54,4 @@ Manual Refresh: If stuck longer than 30 seconds, use the "Try Re-scribing" butto
 
 This project was built for the Google AI Hackathon to showcase the integration of Generative AI in interactive, low-latency gaming environments.
 
-Created by [Your Name/Team Name]
+Created by Haziq Javed
