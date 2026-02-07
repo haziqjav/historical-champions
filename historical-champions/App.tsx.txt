@@ -1,4 +1,4 @@
-// Copy everything below this line
+
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI, Modality, GenerateContentResponse } from "@google/genai"; // Added Gemini imports
 import { ScreenState, PlayerState, CharacterId, BattleStats } from './types';
@@ -321,8 +321,7 @@ const App: React.FC = () => {
         
         <div className="absolute bottom-6 flex flex-col items-center gap-3 z-20">
             <div className="flex items-center gap-2 text-slate-400 font-bold tracking-widest text-xs md:text-sm">
-                <span>© 2025 TUBE HJ GAMES.</span>
-                <span className="hidden md:inline">ALL RIGHTS RESERVED.</span>
+                <span>© 2026 GAME BUILD BY :</span>
             </div>
             
             <a 
@@ -664,4 +663,3 @@ const KeyCap = ({ children, className = '' }: { children?: React.ReactNode, clas
 );
 
 export default App;
-// Copy everything above this line
