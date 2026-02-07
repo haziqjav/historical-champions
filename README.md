@@ -146,6 +146,13 @@ Implemented responsive design
 ## ▶️ Run Locally
 
 ```bash
+🖼️ Screenshots
+
+/screenshots/gameplay.png
+/screenshots/combat.png
+/screenshots/narration.png
+
+
 💡 Future Improvements
 Multiplayer battles
 
