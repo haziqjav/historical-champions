@@ -17,9 +17,8 @@ Historical Champions blends arcade combat with dynamic storytelling. Every battl
 ## 🎮 Live Demo
 
 👉 Play here:  
-https://aistudio.google.com/apps/drive/1H2Gs5nNhVRDBf2ybO48iWtcfOSPp18ns
+[https://ai.studio/apps/drive/1H2Gs5nNhVRDBf2ybO48iWtcfOSPp18ns]
 
----
 
 ## ✨ Features
 
