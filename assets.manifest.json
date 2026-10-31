@@ -1,0 +1,86 @@
+{
+  "_comment": "Single source of truth for bundled asset paths (relative to public/assets). Read by constants.ts and scripts/verify-assets.mjs.",
+  "characters": {
+    "salahuddin": {
+      "idle": "characters/salahuddin.png",
+      "attack": "characters/salahuddin_attack.png",
+      "voice": "voices/salahuddin.mp3"
+    },
+    "baldwin_iv": {
+      "idle": "characters/baldwin_iv.png",
+      "attack": "characters/baldwin_iv_attack.png",
+      "voice": "voices/baldwin_iv.mp3"
+    },
+    "nooruddin": {
+      "idle": "characters/nooruddin.png",
+      "attack": "characters/nooruddin_attack.png",
+      "voice": "voices/nooruddin.mp3"
+    },
+    "guy": {
+      "idle": "characters/guy.png",
+      "attack": "characters/guy_attack.png",
+      "voice": "voices/guy.mp3"
+    },
+    "balian": {
+      "idle": "characters/balian.png",
+      "attack": "characters/balian_attack.png",
+      "voice": "voices/balian.mp3"
+    },
+    "reynald": {
+      "idle": "characters/reynald.png",
+      "attack": "characters/reynald_attack.png",
+      "voice": "voices/reynald.mp3"
+    },
+    "shirkuh": {
+      "idle": "characters/shirkuh.png",
+      "attack": "characters/shirkuh_attack.png",
+      "voice": "voices/shirkuh.mp3"
+    },
+    "bori": {
+      "idle": "characters/bori.png",
+      "attack": "characters/bori_attack.png",
+      "voice": "voices/bori.mp3"
+    }
+  },
+  "arenas": {
+    "hattin": "arenas/hattin.jpg",
+    "kerak": "arenas/kerak.jpg",
+    "marjayyun": "arenas/marjayyun.jpg",
+    "belvoir": "arenas/belvoir.jpg",
+    "montgisard": "arenas/montgisard.jpg"
+  },
+  "matchups": [
+    "baldwin_iv-balian",
+    "baldwin_iv-bori",
+    "baldwin_iv-guy",
+    "baldwin_iv-nooruddin",
+    "baldwin_iv-reynald",
+    "baldwin_iv-salahuddin",
+    "baldwin_iv-shirkuh",
+    "balian-bori",
+    "balian-guy",
+    "balian-nooruddin",
+    "balian-reynald",
+    "balian-salahuddin",
+    "balian-shirkuh",
+    "bori-guy",
+    "bori-nooruddin",
+    "bori-reynald",
+    "bori-salahuddin",
+    "bori-shirkuh",
+    "guy-nooruddin",
+    "guy-reynald",
+    "guy-salahuddin",
+    "guy-shirkuh",
+    "nooruddin-reynald",
+    "nooruddin-salahuddin",
+    "nooruddin-shirkuh",
+    "reynald-salahuddin",
+    "reynald-shirkuh",
+    "salahuddin-shirkuh"
+  ],
+  "audio": {
+    "theme": "audio/theme.mp3",
+    "sword": "audio/sword.mp3"
+  }
+}

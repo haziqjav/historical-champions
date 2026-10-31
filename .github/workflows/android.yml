@@ -1,0 +1,49 @@
+# Builds the Android APK/AAB on GitHub's free runners (no Android Studio needed).
+# Run it: GitHub repo -> Actions -> "Build Android" -> Run workflow. Download from the run's "Artifacts".
+name: Build Android
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 21 }
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npx cap sync android
+      - name: Debug APK (installable on any phone, for testing/friends)
+        working-directory: android
+        run: chmod +x gradlew && ./gradlew assembleDebug
+      - uses: actions/upload-artifact@v4
+        with: { name: historical-champions-debug-apk, path: android/app/build/outputs/apk/debug/app-debug.apk }
+      - name: Signed release APK + AAB (only if you added the keystore secrets)
+        env:
+          KS_B64: ${{ secrets.KEYSTORE_BASE64 }}
+          HC_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          HC_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          HC_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        working-directory: android
+        run: |
+          if [ -n "$KS_B64" ]; then
+            echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            export HC_KEYSTORE_FILE="$RUNNER_TEMP/release.jks"
+            ./gradlew assembleRelease bundleRelease
+          else
+            echo "No keystore secrets set: skipping signed release build."
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: historical-champions-release
+          path: |
+            android/app/build/outputs/apk/release/*.apk
+            android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: ignore

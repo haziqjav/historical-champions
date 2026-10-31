@@ -1,0 +1,85 @@
+apply plugin: 'com.android.application'
+
+// ---- Version (edit android/gradle.properties; versionCode must increase with EVERY Play upload) ----
+def hcVersionCode = (findProperty('HC_VERSION_CODE') ?: '1').toInteger()
+def hcVersionName = findProperty('HC_VERSION_NAME') ?: '1.0.0'
+
+// ---- Release signing: credentials come from android/keystore.properties (git-ignored) or environment
+// variables. Nothing secret is ever stored in this file. See docs/ANDROID_BUILD.md.
+def keystoreProps = new Properties()
+def keystoreFile = rootProject.file('keystore.properties')
+if (keystoreFile.exists()) { keystoreFile.withInputStream { keystoreProps.load(it) } }
+def signStoreFile = keystoreProps['storeFile'] ?: System.getenv('HC_KEYSTORE_FILE')
+def signStorePass = keystoreProps['storePassword'] ?: System.getenv('HC_KEYSTORE_PASSWORD')
+def signKeyAlias  = keystoreProps['keyAlias'] ?: System.getenv('HC_KEY_ALIAS')
+def signKeyPass   = keystoreProps['keyPassword'] ?: System.getenv('HC_KEY_PASSWORD')
+def hasSigning = signStoreFile && signStorePass && signKeyAlias && signKeyPass
+
+android {
+    namespace = "com.haziqjav.historicalchampions"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.haziqjav.historicalchampions"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode hcVersionCode
+        versionName hcVersionName
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        if (hasSigning) {
+            release {
+                storeFile file(signStoreFile)
+                storePassword signStorePass
+                keyAlias signKeyAlias
+                keyPassword signKeyPass
+            }
+        }
+    }
+    bundle {
+        // Single-language game: don't split resources by language.
+        language { enableSplit = false }
+    }
+    buildTypes {
+        release {
+            if (hasSigning) { signingConfig signingConfigs.release }
+            else { logger.warn('WARNING: no release keystore configured - release outputs will be UNSIGNED and cannot be installed or uploaded to Google Play. See docs/ANDROID_BUILD.md.') }
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

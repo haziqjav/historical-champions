@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------- Safe areas -------------------------------------------------------------
+   Capacitor 8 SystemBars: WebView >= 140 passes real env(safe-area-inset-*) through;
+   older WebViews get injected --safe-area-inset-* variables instead. Using max() of
+   both means the same CSS is correct in browsers, new WebViews and old WebViews. */
+:root {
+  --sat: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+  --sar: max(env(safe-area-inset-right, 0px), var(--safe-area-inset-right, 0px));
+  --sab: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+  --sal: max(env(safe-area-inset-left, 0px), var(--safe-area-inset-left, 0px));
+  /* Scales UI with the SMALLER screen side, so phones, tablets and desktops all get sane sizes. */
+  --u: clamp(10px, 1.6vmin, 22px);
+}
+
+html, body, #root { height: 100%; width: 100%; margin: 0; padding: 0; }
+html { background: #000; }
+body {
+  background: #000;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: manipulation; /* no double-tap zoom; scrolling inside lists still works */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+#root { position: fixed; inset: 0; }
+img { -webkit-user-drag: none; user-drag: none; }
+
+.text-stroke { -webkit-text-stroke: 2px black; paint-order: stroke fill; }
+
+/* ---------- Motion (replaces tailwindcss-animate classes that never existed on the CDN build) ---------- */
+@keyframes hc-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes hc-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes hc-pop  { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: none; } }
+@keyframes hc-slide-l { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
+@keyframes hc-slide-r { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+@keyframes hc-count { 0% { opacity: 0; transform: scale(1.7); } 35% { opacity: 1; transform: scale(1); } 100% { opacity: 1; transform: scale(.96); } }
+@keyframes hc-pulse-ring { 0%,100% { box-shadow: 0 0 0 0 rgba(250,204,21,.65); } 50% { box-shadow: 0 0 0 10px rgba(250,204,21,0); } }
+@keyframes hc-spin { to { transform: rotate(360deg); } }
+
+.anim-fade    { animation: hc-fade .28s ease-out both; }
+.anim-rise    { animation: hc-rise .38s cubic-bezier(.2,.8,.2,1) both; }
+.anim-pop     { animation: hc-pop .28s cubic-bezier(.2,.8,.2,1) both; }
+.anim-slide-l { animation: hc-slide-l .5s cubic-bezier(.2,.8,.2,1) both; }
+.anim-slide-r { animation: hc-slide-r .5s cubic-bezier(.2,.8,.2,1) both; }
+.anim-count   { animation: hc-count .9s cubic-bezier(.2,.8,.2,1) both; }
+.anim-ring    { animation: hc-pulse-ring 1.1s ease-in-out infinite; }
+.anim-spin    { animation: hc-spin 1s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-fade, .anim-rise, .anim-pop, .anim-slide-l, .anim-slide-r, .anim-count, .anim-ring { animation-duration: .01ms; animation-iteration-count: 1; }
+}
+
+/* Local replacement for the transparenttextures.com carbon-fibre pattern (was a remote image). */
+.bg-carbon {
+  background-color: #0b111d;
+  background-image:
+    linear-gradient(27deg, #090e18 5px, transparent 5px),
+    linear-gradient(207deg, #090e18 5px, transparent 5px),
+    linear-gradient(27deg, #0e1524 5px, transparent 5px),
+    linear-gradient(207deg, #0e1524 5px, transparent 5px);
+  background-size: 20px 20px;
+  background-position: 0 5px, 10px 0, 0 10px, 10px 5px;
+}
+
+.neon-text {
+  color: #fff; font-family: ui-monospace, monospace; text-transform: uppercase; font-weight: bold;
+  text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #fff, 0 0 40px #FFD700, 0 0 80px #FFD700;
+  animation: flicker 1.5s infinite alternate;
+}
+@keyframes flicker { 0%,18%,22%,25%,53%,57%,100% { opacity: 1; } 20%,24%,55% { opacity: .4; } }
+.rotate-icon { width: 50px; height: 80px; margin-bottom: 1.5rem; border: 4px solid #fff; border-radius: 10px; animation: rotate-phone 2s infinite ease-in-out; }
+@keyframes rotate-phone { 0%,100% { transform: rotate(0); } 50% { transform: rotate(90deg); } }
+
+/* Range inputs (settings sliders) */
+input[type='range'].hc-range { -webkit-appearance: none; appearance: none; height: 6px; border-radius: 9999px; background: #334155; outline: none; touch-action: pan-x; }
+input[type='range'].hc-range::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 9999px; background: #facc15; border: 2px solid #422006; }
+input[type='range'].hc-range::-moz-range-thumb { width: 22px; height: 22px; border-radius: 9999px; background: #facc15; border: 2px solid #422006; }

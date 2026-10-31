@@ -1,0 +1,9 @@
+{
+  "name": "historical-champions-chronicle-proxy",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": { "start": "node chronicle-proxy.mjs" },
+  "dependencies": { "@google/genai": "^1.39.0" },
+  "engines": { "node": ">=20" }
+}
