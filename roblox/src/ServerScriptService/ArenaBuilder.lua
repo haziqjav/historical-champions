@@ -72,10 +72,10 @@ function ArenaBuilder.Build()
 
     -- Large desert foundation and raised circular fighting platform.
     part(arena, "DesertFoundation", Vector3.new(220, 6, 220), point(0, -5, 0), sand, Enum.Material.Sand)
-    part(arena, "OuterStoneRing", Vector3.new(118, 5, 118), point(0, 0, 0), darkStone, Enum.Material.Slate, Enum.PartType.Cylinder)
-    part(arena, "ArenaMainPlatform", Vector3.new(108, 5, 108), point(0, 3, 0), stone, Enum.Material.Limestone, Enum.PartType.Cylinder)
-    part(arena, "ArenaInnerFloor", Vector3.new(84, 0.7, 84), point(0, 5.7, 0), Color3.fromRGB(174, 157, 127), Enum.Material.Slate, Enum.PartType.Cylinder)
-    part(arena, "CentralEmblem", Vector3.new(24, 0.35, 24), point(0, 6.2, 0), Color3.fromRGB(112, 91, 66), Enum.Material.Cobblestone, Enum.PartType.Cylinder)
+    part(arena, "OuterStoneRing", Vector3.new(5, 118, 118), point(0, 0, 0) * CFrame.Angles(0, 0, math.rad(90)), darkStone, Enum.Material.Slate, Enum.PartType.Cylinder)
+    part(arena, "ArenaMainPlatform", Vector3.new(5, 108, 108), point(0, 3, 0) * CFrame.Angles(0, 0, math.rad(90)), stone, Enum.Material.Limestone, Enum.PartType.Cylinder)
+    part(arena, "ArenaInnerFloor", Vector3.new(0.7, 84, 84), point(0, 5.7, 0) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(174, 157, 127), Enum.Material.Slate, Enum.PartType.Cylinder)
+    part(arena, "CentralEmblem", Vector3.new(0.35, 24, 24), point(0, 6.2, 0) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(112, 91, 66), Enum.Material.Cobblestone, Enum.PartType.Cylinder)
 
     -- Rectangular outer curtain wall with a southern gate opening.
     part(arena, "NorthWall", Vector3.new(170, 22, 8), point(0, 11, -82), stone, Enum.Material.Sandstone)
