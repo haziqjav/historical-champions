@@ -1,4 +1,4 @@
--- Server bootstrap: creates remotes and initializes player state.
+-- Server bootstrap: creates remotes, initializes player state, and builds the arena.
 -- All authoritative gameplay state belongs on the server.
 
 local Players = game:GetService("Players")
@@ -33,6 +33,7 @@ local function setupPlayer(player)
     player:SetAttribute("Power", 0)
     player:SetAttribute("SelectedChampion", GameConfig.Roster[1])
 
+    if player:FindFirstChild("leaderstats") then return end
     local leaderstats = Instance.new("Folder")
     leaderstats.Name = "leaderstats"
     leaderstats.Parent = player
@@ -49,13 +50,12 @@ local function setupPlayer(player)
 end
 
 Players.PlayerAdded:Connect(setupPlayer)
-
--- Studio hot-reload safety: initialize players already present.
 for _, player in Players:GetPlayers() do
-    if not player:FindFirstChild("leaderstats") then
-        setupPlayer(player)
-    end
+    setupPlayer(player)
 end
+
+local ArenaBuilder = require(script.Parent:WaitForChild("ArenaBuilder"))
+ArenaBuilder.Build()
 
 local CombatService = require(script.Parent:WaitForChild("CombatService"))
 CombatService.Init(actionRequest, actionFeedback)
