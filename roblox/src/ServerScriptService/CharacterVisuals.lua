@@ -8,13 +8,13 @@ local Service = {}
 
 local P = {
     Salahuddin={title="Ayyubid Commander",a=Color3.fromRGB(24,76,54),b=Color3.fromRGB(190,151,76),m=Color3.fromRGB(174,179,169),h="Turban",curve=true},
-    BaldwinIV={title="The Leper King",a=Color3.fromRGB(206,196,168),b=Color3.fromRGB(171,133,66),m=Color3.fromRGB(181,188,194),h="RoyalHelm"},
+    BaldwinIV={title="King of Jerusalem",a=Color3.fromRGB(206,196,168),b=Color3.fromRGB(171,133,66),m=Color3.fromRGB(181,188,194),h="RoyalHelm"},
     Reynald={title="Lord of Oultrejordain",a=Color3.fromRGB(91,34,34),b=Color3.fromRGB(48,43,42),m=Color3.fromRGB(151,157,159),h="CrusaderHelm"},
     Guy={title="King of Jerusalem",a=Color3.fromRGB(117,32,40),b=Color3.fromRGB(190,149,67),m=Color3.fromRGB(177,182,186),h="CrownHelm"},
     Balian={title="Defender of Jerusalem",a=Color3.fromRGB(43,69,94),b=Color3.fromRGB(169,178,185),m=Color3.fromRGB(151,163,172),h="OpenHelm"},
     Nooruddin={title="Zengid Sultan",a=Color3.fromRGB(29,73,92),b=Color3.fromRGB(174,137,76),m=Color3.fromRGB(173,179,170),h="Turban"},
-    Shirkuh={title="The Lion of Egypt",a=Color3.fromRGB(92,54,37),b=Color3.fromRGB(177,125,55),m=Color3.fromRGB(156,158,147),h="WarTurban",curve=true},
-    Bori={title="The Steppe Warlord",a=Color3.fromRGB(46,57,70),b=Color3.fromRGB(149,108,58),m=Color3.fromRGB(160,166,166),h="SteppeHelm",curve=true},
+    Shirkuh={title="Commander in Egypt",a=Color3.fromRGB(92,54,37),b=Color3.fromRGB(177,125,55),m=Color3.fromRGB(156,158,147),h="WarTurban",curve=true},
+    Bori={title="Burid Atabeg of Damascus",a=Color3.fromRGB(46,57,70),b=Color3.fromRGB(149,108,58),m=Color3.fromRGB(160,166,166),h="WarTurban",curve=false},
 }
 
 local function part(parent,name,size,color,material,cf,shape)
