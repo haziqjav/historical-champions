@@ -1,0 +1,60 @@
+name: Package Historical Champions Roblox Final
+
+on:
+  push:
+    branches:
+      - roblox/final-master-release
+    paths:
+      - "roblox/**"
+      - ".github/workflows/roblox-release-package.yml"
+  pull_request:
+    paths:
+      - "roblox/**"
+      - ".github/workflows/roblox-release-package.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out final source
+        uses: actions/checkout@v4
+
+      - name: Validate Rojo project mapping
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path("roblox")
+          project = json.loads((root / "default.project.json").read_text(encoding="utf-8"))
+          assert project.get("name") == "HistoricalChampionsRoblox"
+          for required in (
+              root / "src/ReplicatedStorage/Shared/GameConfig.lua",
+              root / "src/ServerScriptService/Bootstrap.server.lua",
+              root / "src/ServerScriptService/ProgressionService.lua",
+              root / "src/StarterPlayer/StarterPlayerScripts/FieldGuide.client.lua",
+          ):
+              assert required.is_file(), f"Missing required project file: {required}"
+          print("Rojo project JSON and required Luau files are present.")
+          PY
+
+      - name: Create clean Roblox-only ZIP
+        shell: bash
+        run: |
+          mkdir -p package/HistoricalChampionsRoblox
+          cp -R roblox/. package/HistoricalChampionsRoblox/
+          cd package
+          zip -qr HistoricalChampions-Roblox-Final.zip HistoricalChampionsRoblox
+          mv HistoricalChampions-Roblox-Final.zip ..
+
+      - name: Upload final package
+        uses: actions/upload-artifact@v4
+        with:
+          name: HistoricalChampions-Roblox-Final
+          path: HistoricalChampions-Roblox-Final.zip
+          if-no-files-found: error
+          retention-days: 30
