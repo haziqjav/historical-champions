@@ -10,9 +10,10 @@ This is a **native Roblox/Luau rebuild** of the original Historical Champions co
 - [x] Phase 3 client combat feedback: basic health/stamina HUD, slash cues, impact bursts, floating hit text, and damage flash
 - [x] Phase 4 first-pass character-specific armor, headwear, heraldic details, native-part swords, nameplates, and procedural R6/R15 combat poses
 - [ ] Authored custom 3D champion meshes, historically researched full costumes, and bespoke animation assets
-- [ ] Character selection and champion-specific signature moves
-- [ ] Team assignment, matchmaking, and complete round lifecycle
-- [ ] Finished menus, audio, additional maps, accessibility, and full mobile layout
+- [x] Server-validated eight-champion selection menu
+- [x] Automatic 1v1 round lifecycle, countdown, elimination, results, wins, and coin rewards
+- [x] Charged signature strike with desktop R key and generated touch action, champion-colored signature effects
+- [ ] Bespoke champion signature animations, custom 3D meshes, audio, extra maps, and final mobile polish
 - [ ] Persistence and release hardening
 
 ## Install and sync
@@ -53,7 +54,7 @@ If the Rojo executable is not found, use the same Rojo 7.x executable you alread
 
 This is a gameplay and visual prototype, not final production art. The current phase does generate champion-themed armour pieces, headwear, shields, nameplates, and hand-held swords from native Roblox Parts, and plays procedural R6/R15 joint poses in response to combat events. These first-pass models are deliberately stylized and may need rig-specific position tuning. They are not sculpted custom meshes or professionally authored animation clips; those still require a separate 3D art/animation pass and published animation assets. Two-client Studio testing is required to validate sword placement, visible arm movement, hitbox reach, parry timing, knockback, touch controls, and performance.
 
-## Test checklist
+## Phase 5 test checklist\n\n- [ ] Select each of the eight champions; verify the correct visual profile updates.\n- [ ] Start a two-client test and confirm both fighters spawn on opposite sides.\n- [ ] Confirm intermission countdown, fight timer, elimination, results, and next-round reset.\n- [ ] Confirm Wins and Coins update for participation and the winner.\n- [ ] Land hits until Power reaches 100%; use R / SPECIAL and confirm the stronger strike.\n- [ ] Confirm champion selection is hidden during the active round and returns after results.\n- [ ] Confirm each champion produces its own signature color, impact burst, and expanding energy ring.\n- [ ] Test touch controls and the selection panel at phone aspect ratios.\n\n## Test checklist
 
 - [ ] Rojo connects without parse or sync errors.
 - [ ] Workspace contains `HistoricalChampionsArena`.
@@ -72,8 +73,9 @@ This is a gameplay and visual prototype, not final production art. The current p
 - Recheck all historical depictions, supplied art/audio licensing, mobile behavior, and multiplayer exploits before public release.
 
 
-## Phase 4 test notes
+## Phase 5 gameplay systems\n\n- A champion-selection panel lets players choose among all eight roster entries; the server validates the requested name and locks selection during an active round.\n- MatchService waits for two players, runs an intermission countdown, teleports fighters to opposing arena spawns, tracks eliminations, declares a winner/draw, and awards Wins and Coins.\n- A full Power meter enables a stronger signature strike. Successful hits charge Power; press **R** or use the generated **SPECIAL** touch button.\n- A compact round HUD displays waiting/intermission/fight/results states and the countdown.\n- Eliminated players cannot send combat actions until the round ends.\n\n## Phase 4 test notes
 
 - The default fighter is assigned using each player's UserId so two-player Studio tests can show different visual profiles. This is temporary; a proper character-selection screen is still planned.
 - Sword grip offsets and procedural joint poses may need small rig-specific adjustments after Studio testing.
 - Keep the earlier Phase 3 ZIP and Studio backup until the new gear and weapons are verified.
+\n\n## Phase 5 setup note\n\nUse the `roblox/phase-5-gameplay` branch ZIP for the latest complete gameplay prototype. It includes all Phase 4 source plus the match, selection, HUD, and signature systems. Keep it on a separate Studio test place until the checklist passes.\n

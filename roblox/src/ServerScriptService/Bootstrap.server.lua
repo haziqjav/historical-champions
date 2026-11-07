@@ -67,4 +67,7 @@ CombatService.Init(actionRequest, actionFeedback)
 local CharacterVisuals = require(script.Parent:WaitForChild("CharacterVisuals"))
 CharacterVisuals.Init()
 
-print("[HistoricalChampions] Phase 4 champion visuals initialized.")
+local MatchService = require(script.Parent:WaitForChild("MatchService"))
+MatchService.Init(remotes)
+
+print("[HistoricalChampions] Phase 5 game systems initialized.")

@@ -151,7 +151,7 @@ local function findTargets(attacker, root, range)
     return candidates
 end
 
-local function resolveHit(attacker, root, action, comboIndex, feedback)
+local function resolveHit(attacker, root, action, comboIndex, feedback, signature)
     local isHeavy = action == "HeavyAttack"
     local range = isHeavy and Combat.HeavyRange or Combat.LightRange
     local candidates = findTargets(attacker, root, range)
@@ -171,6 +171,7 @@ local function resolveHit(attacker, root, action, comboIndex, feedback)
     end
 
     local baseDamage = isHeavy and Combat.HeavyDamage or Combat.LightDamage
+    if signature then baseDamage = math.floor(baseDamage * 1.65) end
     if not isHeavy then
         baseDamage += math.max(0, comboIndex - 1) * 2
     end
@@ -205,7 +206,7 @@ local function resolveHit(attacker, root, action, comboIndex, feedback)
     end
 
     target.humanoid:TakeDamage(finalDamage)
-    defender:SetAttribute("Power", math.clamp((defender:GetAttribute("Power") or 0) + 10, 0, 100))
+    attacker:SetAttribute("Power", math.clamp((attacker:GetAttribute("Power") or 0) + 15, 0, 100))
 
     if not blocked or guardBroken then
         local direction = target.root.Position - root.Position
@@ -347,8 +348,43 @@ local function performDodge(player, feedback)
     end)
 end
 
+local function performSignature(player, feedback)
+    local character, humanoid, root = getCharacterParts(player)
+    if not humanoid or isStunned(player, os.clock()) or blocking[player] then return end
+    if player:GetAttribute("CombatState") ~= "Idle" then return end
+    if (player:GetAttribute("Power") or 0) < 100 then
+        feedback:FireClient(player, "SignatureNotReady", {})
+        return
+    end
+    if not canUse(player, "Signature", 12) then return end
+    player:SetAttribute("Power", 0)
+    setState(player, "Attacking")
+    feedback:FireAllClients("AttackCue", {
+        userId = player.UserId, action = "HeavyAttack", combo = 0,
+        position = root.Position, lookVector = root.CFrame.LookVector,
+    })
+    feedback:FireAllClients("SignatureCue", {
+        userId = player.UserId,
+        champion = player:GetAttribute("SelectedChampion") or "Salahuddin",
+        position = root.Position,
+        lookVector = root.CFrame.LookVector,
+    })
+    task.delay(0.24, function()
+        local currentCharacter, currentHumanoid, currentRoot = getCharacterParts(player)
+        if player.Parent and currentCharacter == character and currentHumanoid == humanoid and currentHumanoid.Health > 0 then
+            resolveHit(player, currentRoot, "HeavyAttack", 0, feedback, true)
+        end
+    end)
+    task.delay(0.9, function()
+        if player.Parent and player.Character == character and not isStunned(player, os.clock()) then
+            setState(player, "Idle")
+        end
+    end)
+end
+
 local function handleAction(player, action, feedback)
     if typeof(action) ~= "string" or not withinRateLimit(player) then return end
+    if player:GetAttribute("RoundEliminated") == true then return end
 
     if action == "LightAttack" or action == "HeavyAttack" then
         performAttack(player, action, feedback)
@@ -358,6 +394,8 @@ local function handleAction(player, action, feedback)
         stopBlock(player, feedback)
     elseif action == "Dodge" then
         performDodge(player, feedback)
+    elseif action == "Signature" then
+        performSignature(player, feedback)
     end
 end
 
