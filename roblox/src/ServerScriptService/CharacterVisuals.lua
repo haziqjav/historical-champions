@@ -95,7 +95,16 @@ local function addSword(folder,hand,name,profile)
 end
 
 local function addNameplate(head,name,profile)
-    local gui=Instance.new("BillboardGui"); gui.Name="HC_ChampionNameplate"; gui.Size=UDim2.fromOffset(190,42)
+    -- Nameplates are parented directly to Head, outside the gear folder.
+    -- Remove every previous copy before creating the replacement, including
+    -- duplicates left by older builds of the character visual system.
+    for _,child in ipairs(head:GetChildren()) do
+        if child:IsA("BillboardGui") and (child.Name=="HC_ChampionNameplate" or child:GetAttribute("HCGeneratedNameplate")==true) then
+            child:Destroy()
+        end
+    end
+
+    local gui=Instance.new("BillboardGui"); gui.Name="HC_ChampionNameplate"; gui:SetAttribute("HCGeneratedNameplate",true); gui.Size=UDim2.fromOffset(190,42)
     gui.StudsOffset=Vector3.new(0,1.55,0); gui.MaxDistance=100; gui.Adornee=head; gui.Parent=head
     local title=Instance.new("TextLabel"); title.Size=UDim2.new(1,0,0,22); title.BackgroundTransparency=1
     title.Font=Enum.Font.GothamBold; title.Text=name; title.TextColor3=profile.b
