@@ -207,8 +207,10 @@ local function resolveHit(attacker, root, action, comboIndex, feedback)
 
     if not blocked or guardBroken then
         local direction = target.root.Position - root.Position
-        if direction.Magnitude > 0.01 then
-            target.root:ApplyImpulse(direction.Unit * target.root.AssemblyMass * (isHeavy and 15 or 7))
+        local flatDirection = Vector3.new(direction.X, 0, direction.Z)
+        if flatDirection.Magnitude > 0.01 then
+            local push = flatDirection.Unit * (isHeavy and 15 or 7) + Vector3.new(0, isHeavy and 3 or 1, 0)
+            target.root:ApplyImpulse(push * target.root.AssemblyMass)
         end
     end
 
@@ -227,6 +229,7 @@ end
 local function performAttack(player, action, feedback)
     local character, humanoid, root = getCharacterParts(player)
     if not humanoid or isStunned(player, os.clock()) or blocking[player] then return end
+    if player:GetAttribute("CombatState") ~= "Idle" then return end
 
     local isHeavy = action == "HeavyAttack"
     local staminaCost = isHeavy and Combat.HeavyStaminaCost or Combat.LightStaminaCost
@@ -282,7 +285,8 @@ end
 
 local function startBlock(player, feedback)
     if not getCharacterParts(player) or isStunned(player, os.clock()) then return end
-    if player:GetAttribute("CombatState") == "Attacking" then return end
+    local state = player:GetAttribute("CombatState")
+    if state ~= "Idle" and state ~= "Blocking" then return end
     if getStamina(player) <= 0 then return end
 
     blocking[player] = true
@@ -294,9 +298,10 @@ local function startBlock(player, feedback)
 end
 
 local function stopBlock(player)
+    local wasBlocking = blocking[player] == true
     blocking[player] = nil
     parryUntil[player] = nil
-    if player.Parent then
+    if wasBlocking and player.Parent then
         player:SetAttribute("IsBlocking", false)
         if not isStunned(player, os.clock()) then
             setState(player, "Idle")
@@ -307,9 +312,13 @@ end
 local function performDodge(player, feedback)
     local _, humanoid, root = getCharacterParts(player)
     if not humanoid or isStunned(player, os.clock()) or blocking[player] then return end
-    if not canUse(player, "Dodge", Combat.DodgeCooldown) then return end
+    if player:GetAttribute("CombatState") ~= "Idle" then return end
     if not spendStamina(player, Combat.DodgeStaminaCost) then
         feedback:FireClient(player, "TooTired", {})
+        return
+    end
+    if not canUse(player, "Dodge", Combat.DodgeCooldown) then
+        player:SetAttribute("Stamina", math.min(Combat.MaxStamina, getStamina(player) + Combat.DodgeStaminaCost))
         return
     end
 
