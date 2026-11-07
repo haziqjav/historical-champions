@@ -50,6 +50,9 @@ GameConfig.Progression = {
     StartingCoins = 0,
     WinCoins = 25,
     ParticipationCoins = 8,
+    ParticipationXP = 20,
+    WinXP = 35,
+    XPPerLevel = 100,
 }
 
 GameConfig.Roster = {
