@@ -83,9 +83,9 @@ local function addSword(folder,hand,name,profile)
     local base=bladePart("HC_BladeBase",Vector3.new(.36,.62,.07),CFrame.new(0,.76,0),Color3.fromRGB(204,213,210),Enum.Material.Metal)
     bladePart("HC_BladeMid",Vector3.new(.31,.72,.065),CFrame.new(profile.curve and .05 or 0,1.40,0),Color3.fromRGB(204,213,210),Enum.Material.Metal)
     bladePart("HC_BladeUpper",Vector3.new(.23,.66,.06),CFrame.new(profile.curve and .13 or 0,2.08,0),Color3.fromRGB(204,213,210),Enum.Material.Metal)
-    bladePart("HC_BladeTip",Vector3.new(.12,.46,.045),CFrame.new(profile.curve and .22 or 0,2.57,0)*CFrame.Angles(0,0,profile.curve and math.rad(9) or 0),Color3.fromRGB(204,213,210),Enum.Material.Metal)
+    local tip=bladePart("HC_BladeTip",Vector3.new(.12,.46,.045),CFrame.new(profile.curve and .22 or 0,2.57,0)*CFrame.Angles(0,0,profile.curve and math.rad(9) or 0),Color3.fromRGB(204,213,210),Enum.Material.Metal)
     local a0=Instance.new("Attachment"); a0.Position=Vector3.new(0,-.25,0); a0.Parent=base
-    local a1=Instance.new("Attachment"); a1.Position=Vector3.new(0,.29,0); a1.Parent=base
+    local a1=Instance.new("Attachment"); a1.Position=Vector3.new(0,.20,0); a1.Parent=tip
     local trail=Instance.new("Trail"); trail.Name="HC_SwordTrail"; trail.Attachment0=a0; trail.Attachment1=a1
     trail.Lifetime=.18; trail.MinLength=.08; trail.LightEmission=.55
     trail.Color=ColorSequence.new(profile.b,Color3.fromRGB(225,230,230))
@@ -144,7 +144,7 @@ function Service.Apply(player,char)
 
     addHeadwear(folder,head,profile)
     addSword(folder,hand,name,profile)
-    addNameplate(head,name,profile.title)
+    addNameplate(head,name,profile)
     char:SetAttribute("HC_VisualsReady",true)
     char:SetAttribute("HC_Champion",name)
 end
