@@ -70,3 +70,10 @@ feedback.OnClientEvent:Connect(function(ok, message)
     status.Text = ok and ("Selected: " .. (displayNames[message] or message)) or tostring(message)
     if ok then updateSelected(message) end
 end)
+
+local matchState = remotes:WaitForChild("MatchState")
+matchState.OnClientEvent:Connect(function(data)
+    if typeof(data) == "table" then
+        panel.Visible = data.state ~= "Round"
+    end
+end)
