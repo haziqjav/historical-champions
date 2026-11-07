@@ -26,11 +26,11 @@ end
 
 local function buildTower(parent, x, z)
     part(parent, "FortressTower", Vector3.new(18, 34, 18), point(x, 19, z), Color3.fromRGB(133, 105, 77), Enum.Material.Sandstone)
-    part(parent, "TowerBattlement", Vector3.new(22, 4, 22), point(x, 38, z), Color3.fromRGB(165, 135, 99), Enum.Material.Limestone)
+    part(parent, "TowerBattlement", Vector3.new(22, 4, 22), point(x, 38, z), Color3.fromRGB(165, 135, 99), Enum.Material.Sandstone)
     for i = 1, 4 do
         local angle = math.rad((i - 1) * 90)
         local dx, dz = math.cos(angle) * 10, math.sin(angle) * 10
-        part(parent, "BattlementMerlon", Vector3.new(5, 5, 5), point(x + dx, 42, z + dz), Color3.fromRGB(165, 135, 99), Enum.Material.Limestone)
+        part(parent, "BattlementMerlon", Vector3.new(5, 5, 5), point(x + dx, 42, z + dz), Color3.fromRGB(165, 135, 99), Enum.Material.Sandstone)
     end
     part(parent, "TowerWindow", Vector3.new(3, 8, 0.6), point(x, 24, z - 9.4), Color3.fromRGB(38, 31, 25), Enum.Material.Slate)
 end
@@ -73,7 +73,7 @@ function ArenaBuilder.Build()
     -- Large desert foundation and raised circular fighting platform.
     part(arena, "DesertFoundation", Vector3.new(220, 6, 220), point(0, -5, 0), sand, Enum.Material.Sand)
     part(arena, "OuterStoneRing", Vector3.new(5, 118, 118), point(0, 0, 0) * CFrame.Angles(0, 0, math.rad(90)), darkStone, Enum.Material.Slate, Enum.PartType.Cylinder)
-    part(arena, "ArenaMainPlatform", Vector3.new(5, 108, 108), point(0, 3, 0) * CFrame.Angles(0, 0, math.rad(90)), stone, Enum.Material.Limestone, Enum.PartType.Cylinder)
+    part(arena, "ArenaMainPlatform", Vector3.new(5, 108, 108), point(0, 3, 0) * CFrame.Angles(0, 0, math.rad(90)), stone, Enum.Material.Sandstone, Enum.PartType.Cylinder)
     part(arena, "ArenaInnerFloor", Vector3.new(0.7, 84, 84), point(0, 5.7, 0) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(174, 157, 127), Enum.Material.Slate, Enum.PartType.Cylinder)
     part(arena, "CentralEmblem", Vector3.new(0.35, 24, 24), point(0, 6.2, 0) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(112, 91, 66), Enum.Material.Cobblestone, Enum.PartType.Cylinder)
 
