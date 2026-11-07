@@ -22,6 +22,17 @@ panel.BackgroundColor3 = Color3.fromRGB(20,24,32); panel.BackgroundTransparency 
 panel.BorderSizePixel = 0; panel.Parent = gui
 local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0,12); corner.Parent = panel
 local stroke = Instance.new("UIStroke"); stroke.Color = Color3.fromRGB(190,151,83); stroke.Thickness = 1.5; stroke.Parent = panel
+local panelScale = Instance.new("UIScale")
+panelScale.Parent = panel
+local function updatePanelScale()
+    local camera = workspace.CurrentCamera
+    if not camera then return end
+    panelScale.Scale = math.clamp(camera.ViewportSize.Y / 440, 0.72, 1)
+end
+updatePanelScale()
+if workspace.CurrentCamera then
+    workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(updatePanelScale)
+end
 local title = Instance.new("TextLabel")
 title.BackgroundTransparency = 1; title.Position = UDim2.fromOffset(12,9); title.Size = UDim2.new(1,-24,0,30)
 title.Font = Enum.Font.GothamBold; title.Text = "CHOOSE YOUR CHAMPION"
