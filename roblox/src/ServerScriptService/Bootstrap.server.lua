@@ -1,5 +1,4 @@
--- Server bootstrap: creates remotes, initializes player state, and builds the arena.
--- All authoritative gameplay state belongs on the server.
+-- Server bootstrap. The server owns player state, progression, combat, and match results.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -31,32 +30,49 @@ local function setupPlayer(player)
     player:SetAttribute("CombatState", "Idle")
     player:SetAttribute("IsBlocking", false)
     player:SetAttribute("Power", 0)
+    player:SetAttribute("InMatch", false)
+    player:SetAttribute("RoundEliminated", false)
+    player:SetAttribute("SpawnProtectedUntil", 0)
+    player:SetAttribute("HC_ProfileLoaded", false)
+    player:SetAttribute("Level", 1)
+
     local defaultChampionIndex = (player.UserId % #GameConfig.Roster) + 1
-    player:SetAttribute("SelectedChampion", GameConfig.Roster[defaultChampionIndex])
+    if not player:GetAttribute("SelectedChampion") then
+        player:SetAttribute("SelectedChampion", GameConfig.Roster[defaultChampionIndex])
+    end
     player:SetAttribute("MaxStamina", GameConfig.Combat.MaxStamina)
     player:SetAttribute("Stamina", GameConfig.Combat.MaxStamina)
     player:SetAttribute("ComboCount", 0)
 
-    if player:FindFirstChild("leaderstats") then return end
-    local leaderstats = Instance.new("Folder")
-    leaderstats.Name = "leaderstats"
-    leaderstats.Parent = player
+    local leaderstats = player:FindFirstChild("leaderstats")
+    if not leaderstats then
+        leaderstats = Instance.new("Folder")
+        leaderstats.Name = "leaderstats"
+        leaderstats.Parent = player
+    end
 
-    local coins = Instance.new("IntValue")
-    coins.Name = "Coins"
-    coins.Value = GameConfig.Progression.StartingCoins
-    coins.Parent = leaderstats
+    local function ensureStat(name, value)
+        local stat = leaderstats:FindFirstChild(name)
+        if not stat then
+            stat = Instance.new("IntValue")
+            stat.Name = name
+            stat.Value = value
+            stat.Parent = leaderstats
+        end
+    end
 
-    local wins = Instance.new("IntValue")
-    wins.Name = "Wins"
-    wins.Value = 0
-    wins.Parent = leaderstats
+    ensureStat("Coins", GameConfig.Progression.StartingCoins)
+    ensureStat("Wins", 0)
+    ensureStat("XP", 0)
 end
 
 Players.PlayerAdded:Connect(setupPlayer)
-for _, player in Players:GetPlayers() do
+for _, player in ipairs(Players:GetPlayers()) do
     setupPlayer(player)
 end
+
+local ProgressionService = require(script.Parent:WaitForChild("ProgressionService"))
+ProgressionService.Init()
 
 local ArenaBuilder = require(script.Parent:WaitForChild("ArenaBuilder"))
 ArenaBuilder.Build()
@@ -70,4 +86,4 @@ CharacterVisuals.Init()
 local MatchService = require(script.Parent:WaitForChild("MatchService"))
 MatchService.Init(remotes)
 
-print("[HistoricalChampions] Phase 5 game systems initialized.")
+print("[HistoricalChampions] Final master gameplay systems initialized.")
