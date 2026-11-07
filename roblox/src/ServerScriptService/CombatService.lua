@@ -79,13 +79,17 @@ local function spendStamina(player, amount)
     return true
 end
 
-local function applyStun(player, duration)
+local function applyStun(player, duration, feedback)
     local now = os.clock()
     stunnedUntil[player] = math.max(stunnedUntil[player] or 0, now + duration)
+    local wasBlocking = blocking[player] == true
     blocking[player] = nil
     parryUntil[player] = nil
 
     player:SetAttribute("IsBlocking", false)
+    if wasBlocking and feedback then
+        feedback:FireAllClients("BlockEndCue", { userId = player.UserId })
+    end
     setState(player, "Stunned")
 
     task.delay(duration, function()
@@ -173,7 +177,7 @@ local function resolveHit(attacker, root, action, comboIndex, feedback)
 
     local blocked = blocking[defender] == true and isFacing(target.root, root.Position)
     if blocked and (parryUntil[defender] or 0) >= now then
-        applyStun(attacker, Combat.ParryStunSeconds)
+        applyStun(attacker, Combat.ParryStunSeconds, feedback)
         feedback:FireAllClients("Parried", {
             attackerUserId = attacker.UserId,
             defenderUserId = defender.UserId,
@@ -191,9 +195,7 @@ local function resolveHit(attacker, root, action, comboIndex, feedback)
 
         if remaining <= 0 then
             defender:SetAttribute("Stamina", 0)
-            blocking[defender] = nil
-            defender:SetAttribute("IsBlocking", false)
-            applyStun(defender, Combat.GuardBreakStunSeconds)
+            applyStun(defender, Combat.GuardBreakStunSeconds, feedback)
             guardBroken = true
         else
             defender:SetAttribute("Stamina", remaining)
@@ -297,7 +299,7 @@ local function startBlock(player, feedback)
     feedback:FireAllClients("BlockCue", { userId = player.UserId })
 end
 
-local function stopBlock(player)
+local function stopBlock(player, feedback)
     local wasBlocking = blocking[player] == true
     blocking[player] = nil
     parryUntil[player] = nil
@@ -306,6 +308,7 @@ local function stopBlock(player)
         if not isStunned(player, os.clock()) then
             setState(player, "Idle")
         end
+        feedback:FireAllClients("BlockEndCue", { userId = player.UserId })
     end
 end
 
@@ -352,7 +355,7 @@ local function handleAction(player, action, feedback)
     elseif action == "BlockStart" then
         startBlock(player, feedback)
     elseif action == "BlockEnd" then
-        stopBlock(player)
+        stopBlock(player, feedback)
     elseif action == "Dodge" then
         performDodge(player, feedback)
     end
@@ -415,7 +418,8 @@ function CombatService.Init(actionRequest, actionFeedback)
                 if stamina <= 0 then
                     blocking[player] = nil
                     player:SetAttribute("IsBlocking", false)
-                    applyStun(player, Combat.GuardBreakStunSeconds)
+                    actionFeedback:FireAllClients("BlockEndCue", { userId = player.UserId })
+                    applyStun(player, Combat.GuardBreakStunSeconds, actionFeedback)
                 end
                 lastStaminaUse[player] = now
             elseif now - (lastStaminaUse[player] or 0) >= Combat.StaminaRegenDelay then

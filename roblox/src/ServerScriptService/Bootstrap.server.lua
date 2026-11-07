@@ -31,7 +31,8 @@ local function setupPlayer(player)
     player:SetAttribute("CombatState", "Idle")
     player:SetAttribute("IsBlocking", false)
     player:SetAttribute("Power", 0)
-    player:SetAttribute("SelectedChampion", GameConfig.Roster[1])
+    local defaultChampionIndex = (player.UserId % #GameConfig.Roster) + 1
+    player:SetAttribute("SelectedChampion", GameConfig.Roster[defaultChampionIndex])
     player:SetAttribute("MaxStamina", GameConfig.Combat.MaxStamina)
     player:SetAttribute("Stamina", GameConfig.Combat.MaxStamina)
     player:SetAttribute("ComboCount", 0)
@@ -63,4 +64,7 @@ ArenaBuilder.Build()
 local CombatService = require(script.Parent:WaitForChild("CombatService"))
 CombatService.Init(actionRequest, actionFeedback)
 
-print("[HistoricalChampions] Server foundation initialized.")
+local CharacterVisuals = require(script.Parent:WaitForChild("CharacterVisuals"))
+CharacterVisuals.Init()
+
+print("[HistoricalChampions] Phase 4 champion visuals initialized.")
