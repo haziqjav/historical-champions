@@ -64,6 +64,7 @@ local function setupPlayer(player)
     ensureStat("Coins", GameConfig.Progression.StartingCoins)
     ensureStat("Wins", 0)
     ensureStat("XP", 0)
+    ensureStat("Level", 1)
 end
 
 Players.PlayerAdded:Connect(setupPlayer)
