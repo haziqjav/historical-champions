@@ -93,8 +93,22 @@ function ArenaBuilder.Build()
     buildTower(arena, 82, 82)
 
     -- Two opposing team entry platforms and spawn locations.
-    part(arena, "WestSpawnPad", Vector3.new(24, 1, 24), point(-49, 0.5, 0), Color3.fromRGB(91, 112, 123), Enum.Material.Slate)
-    part(arena, "EastSpawnPad", Vector3.new(24, 1, 24), point(49, 0.5, 0), Color3.fromRGB(151, 104, 77), Enum.Material.Slate)
+    part(arena, "WestSpawnPad", Vector3.new(24, 1, 24), point(-49, 6, 0), Color3.fromRGB(91, 112, 123), Enum.Material.Slate)
+    part(arena, "EastSpawnPad", Vector3.new(24, 1, 24), point(49, 6, 0), Color3.fromRGB(151, 104, 77), Enum.Material.Slate)
+
+    -- Low-contrast radial inlays make the dueling floor feel designed without
+    -- putting collidable geometry in the fighters' movement space.
+    for index = 1, 8 do
+        local angle = (math.pi * 2) * (index / 8)
+        local radius = 29
+        local x, z = math.cos(angle) * radius, math.sin(angle) * radius
+        local inlay = part(arena, "ArenaRadialInlay", Vector3.new(9, 0.12, 0.28),
+            point(x, 6.16, z) * CFrame.Angles(0, -angle, 0),
+            Color3.fromRGB(171, 139, 83), Enum.Material.Metal)
+        inlay.CanCollide = false
+        inlay.CanTouch = false
+        inlay.CanQuery = false
+    end
 
     local spawnA = Instance.new("SpawnLocation")
     spawnA.Name = "WestChampionSpawn"
