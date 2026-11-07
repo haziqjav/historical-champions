@@ -67,9 +67,11 @@ Touch buttons are generated for supported mobile devices. Landscape orientation 
 DataStore access may be unavailable in an unpublished local test. Before expecting saved Coins, Wins, XP, Level and champion selection:
 
 1. Publish the Roblox experience from Studio.
-2. Open **Game Settings → Security**.
-3. Enable **Studio Access to API Services** only if you also want DataStore testing from Studio.
-4. Test by leaving and rejoining a published test server.
+2. Open **File → Experience Settings → Security**.
+3. Enable **Enable Studio Access to API Services** only for a separate test experience.
+4. Test by leaving and rejoining that published test server.
+
+Studio uses the experience's live DataStores when this setting is enabled. Do not use a production experience for experimental save tests, because Studio writes can change real player data.
 
 If DataStore access fails, the game continues with session-only stats and logs a warning; the combat round does not depend on profile storage.
 
