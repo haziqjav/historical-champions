@@ -363,6 +363,12 @@ local function performSignature(player, feedback)
         userId = player.UserId, action = "HeavyAttack", combo = 0,
         position = root.Position, lookVector = root.CFrame.LookVector,
     })
+    feedback:FireAllClients("SignatureCue", {
+        userId = player.UserId,
+        champion = player:GetAttribute("SelectedChampion") or "Salahuddin",
+        position = root.Position,
+        lookVector = root.CFrame.LookVector,
+    })
     task.delay(0.24, function()
         local currentCharacter, currentHumanoid, currentRoot = getCharacterParts(player)
         if player.Parent and currentCharacter == character and currentHumanoid == humanoid and currentHumanoid.Health > 0 then
