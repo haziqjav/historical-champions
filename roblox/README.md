@@ -12,7 +12,7 @@ This is a **native Roblox/Luau rebuild** of the original Historical Champions co
 - [ ] Authored custom 3D champion meshes, historically researched full costumes, and bespoke animation assets
 - [x] Server-validated eight-champion selection menu
 - [x] Automatic 1v1 round lifecycle, countdown, elimination, results, wins, and coin rewards
-- [x] Charged signature strike with desktop R key and generated touch action
+- [x] Charged signature strike with desktop R key and generated touch action, champion-colored signature effects
 - [ ] Bespoke champion signature animations, custom 3D meshes, audio, extra maps, and final mobile polish
 - [ ] Persistence and release hardening
 
@@ -54,7 +54,7 @@ If the Rojo executable is not found, use the same Rojo 7.x executable you alread
 
 This is a gameplay and visual prototype, not final production art. The current phase does generate champion-themed armour pieces, headwear, shields, nameplates, and hand-held swords from native Roblox Parts, and plays procedural R6/R15 joint poses in response to combat events. These first-pass models are deliberately stylized and may need rig-specific position tuning. They are not sculpted custom meshes or professionally authored animation clips; those still require a separate 3D art/animation pass and published animation assets. Two-client Studio testing is required to validate sword placement, visible arm movement, hitbox reach, parry timing, knockback, touch controls, and performance.
 
-## Phase 5 test checklist\n\n- [ ] Select each of the eight champions; verify the correct visual profile updates.\n- [ ] Start a two-client test and confirm both fighters spawn on opposite sides.\n- [ ] Confirm intermission countdown, fight timer, elimination, results, and next-round reset.\n- [ ] Confirm Wins and Coins update for participation and the winner.\n- [ ] Land hits until Power reaches 100%; use R / SPECIAL and confirm the stronger strike.\n- [ ] Confirm champion selection is hidden during the active round and returns after results.\n- [ ] Test touch controls and the selection panel at phone aspect ratios.\n\n## Test checklist
+## Phase 5 test checklist\n\n- [ ] Select each of the eight champions; verify the correct visual profile updates.\n- [ ] Start a two-client test and confirm both fighters spawn on opposite sides.\n- [ ] Confirm intermission countdown, fight timer, elimination, results, and next-round reset.\n- [ ] Confirm Wins and Coins update for participation and the winner.\n- [ ] Land hits until Power reaches 100%; use R / SPECIAL and confirm the stronger strike.\n- [ ] Confirm champion selection is hidden during the active round and returns after results.\n- [ ] Confirm each champion produces its own signature color, impact burst, and expanding energy ring.\n- [ ] Test touch controls and the selection panel at phone aspect ratios.\n\n## Test checklist
 
 - [ ] Rojo connects without parse or sync errors.
 - [ ] Workspace contains `HistoricalChampionsArena`.
