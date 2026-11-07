@@ -128,7 +128,9 @@ local function findTargets(attacker, root, range)
             seen[model] = true
             local targetPlayer = Players:GetPlayerFromCharacter(model)
 
-            if targetPlayer and targetPlayer ~= attacker then
+            if targetPlayer and targetPlayer ~= attacker
+                and targetPlayer:GetAttribute("InMatch") == true
+                and targetPlayer:GetAttribute("RoundEliminated") ~= true then
                 local _, targetHumanoid, targetRoot = getCharacterParts(targetPlayer)
                 if targetHumanoid and targetRoot
                     and isFacing(root, targetRoot.Position)
@@ -161,7 +163,8 @@ local function resolveHit(attacker, root, action, comboIndex, feedback, signatur
     local defender = target.player
     local now = os.clock()
 
-    if (invulnerableUntil[defender] or 0) > now then
+    if (invulnerableUntil[defender] or 0) > now
+        or (defender:GetAttribute("SpawnProtectedUntil") or 0) > now then
         feedback:FireAllClients("DodgeEvade", {
             attackerUserId = attacker.UserId,
             targetUserId = defender.UserId,
@@ -384,7 +387,11 @@ end
 
 local function handleAction(player, action, feedback)
     if typeof(action) ~= "string" or not withinRateLimit(player) then return end
-    if player:GetAttribute("RoundEliminated") == true then return end
+    if action == "BlockEnd" then
+        stopBlock(player, feedback)
+        return
+    end
+    if player:GetAttribute("RoundEliminated") == true or player:GetAttribute("InMatch") ~= true then return end
 
     if action == "LightAttack" or action == "HeavyAttack" then
         performAttack(player, action, feedback)
@@ -419,6 +426,11 @@ function CombatService.Init(actionRequest, actionFeedback)
         end
 
         player.CharacterAdded:Connect(prepareCharacter)
+        player:GetAttributeChangedSignal("InMatch"):Connect(function()
+            if player:GetAttribute("InMatch") ~= true then
+                stopBlock(player, actionFeedback)
+            end
+        end)
         if player.Character then prepareCharacter() end
     end
 
