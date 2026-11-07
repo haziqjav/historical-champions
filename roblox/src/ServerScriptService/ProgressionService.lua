@@ -56,7 +56,9 @@ local function applyProfile(player, data)
     valueObject(stats, "Wins", 0).Value = integer(data.wins, 0)
     local xp = valueObject(stats, "XP", 0)
     xp.Value = integer(data.xp, 0)
-    player:SetAttribute("Level", math.floor(xp.Value / 100) + 1)
+    local level = valueObject(stats, "Level", 1)
+    level.Value = math.floor(xp.Value / GameConfig.Progression.XPPerLevel) + 1
+    player:SetAttribute("Level", level.Value)
 
     if typeof(data.champion) == "string" and table.find(GameConfig.Roster, data.champion) then
         player:SetAttribute("SelectedChampion", data.champion)
@@ -64,7 +66,7 @@ local function applyProfile(player, data)
 end
 
 function Service.SavePlayer(player)
-    if not player or not player.Parent or saving[player] or not loaded[player] then return end
+    if not player or saving[player] or not loaded[player] then return end
     local profile = getProfile(player)
     if not profile then return end
 
