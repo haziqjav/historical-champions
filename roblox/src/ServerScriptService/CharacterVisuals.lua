@@ -142,6 +142,24 @@ function Service.Apply(player,char)
         end
     end
 
+    -- Leg guards and an off-hand shield add a clear medieval silhouette from a distance.
+    for _,leg in ipairs({getPart(char,"LeftUpperLeg","Left Leg"),getPart(char,"RightUpperLeg","Right Leg")}) do
+        if leg then
+            gear(folder,leg,"HC_ThighGuard",Vector3.new(leg.Size.X*1.08,leg.Size.Y*.38,.14),CFrame.new(0,0,-leg.Size.Z*.55),profile.m,Enum.Material.Metal)
+        end
+    end
+    for _,leg in ipairs({getPart(char,"LeftLowerLeg","Left Leg"),getPart(char,"RightLowerLeg","Right Leg")}) do
+        if leg then
+            gear(folder,leg,"HC_Greave",Vector3.new(leg.Size.X*1.12,leg.Size.Y*.62,.15),CFrame.new(0,0,-leg.Size.Z*.55),profile.b,Enum.Material.Metal)
+        end
+    end
+    local shieldArm=getPart(char,"LeftLowerArm","Left Arm")
+    if shieldArm then
+        gear(folder,shieldArm,"HC_ShieldRim",Vector3.new(.2,1.10,.88),CFrame.new(0,0,-.42),profile.b,Enum.Material.Metal,Enum.PartType.Ball)
+        gear(folder,shieldArm,"HC_ShieldFace",Vector3.new(.22,.91,.69),CFrame.new(0,0,-.54),profile.a,Enum.Material.Wood,Enum.PartType.Ball)
+        gear(folder,shieldArm,"HC_ShieldBoss",Vector3.new(.25,.25,.25),CFrame.new(0,0,-.67),profile.b,Enum.Material.Metal,Enum.PartType.Ball)
+    end
+
     addHeadwear(folder,head,profile)
     addSword(folder,hand,name,profile)
     addNameplate(head,name,profile)
