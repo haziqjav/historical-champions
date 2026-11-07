@@ -32,6 +32,9 @@ local function setupPlayer(player)
     player:SetAttribute("IsBlocking", false)
     player:SetAttribute("Power", 0)
     player:SetAttribute("SelectedChampion", GameConfig.Roster[1])
+    player:SetAttribute("MaxStamina", GameConfig.Combat.MaxStamina)
+    player:SetAttribute("Stamina", GameConfig.Combat.MaxStamina)
+    player:SetAttribute("ComboCount", 0)
 
     if player:FindFirstChild("leaderstats") then return end
     local leaderstats = Instance.new("Folder")
