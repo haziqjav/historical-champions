@@ -206,7 +206,7 @@ local function resolveHit(attacker, root, action, comboIndex, feedback, signatur
     end
 
     target.humanoid:TakeDamage(finalDamage)
-    defender:SetAttribute("Power", math.clamp((defender:GetAttribute("Power") or 0) + 10, 0, 100))
+    attacker:SetAttribute("Power", math.clamp((attacker:GetAttribute("Power") or 0) + 15, 0, 100))
 
     if not blocked or guardBroken then
         local direction = target.root.Position - root.Position
