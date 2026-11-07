@@ -1,81 +1,93 @@
-# Historical Champions — Roblox Edition
+# Historical Champions — Roblox Final Master Build
 
-This is a **native Roblox/Luau rebuild** of the original Historical Champions concept. The existing React/TypeScript browser and Android game remains separate and untouched by the Roblox branches.
+This is the consolidated Roblox edition of Historical Champions. It contains the arena, eight champion profiles, server-authoritative 1v1 combat, champion selection, rounds, rewards, persistent progression, combat feedback, and an in-game history/controls guide.
 
-## Development status
+The original browser and Android project is kept separate. This Roblox package contains only the native Luau project under `roblox/`.
 
-- [x] Phase 1 repository scaffold, remotes, player setup, and initial server combat foundation
-- [x] Phase 2 generated medieval desert arena and opposing spawn locations
-- [x] Phase 3 timed server-side melee prototype: light combo chain, heavy attack, box hit detection, stamina, block, parry window, guard break, and dodge invulnerability
-- [x] Phase 3 client combat feedback: basic health/stamina HUD, slash cues, impact bursts, floating hit text, and damage flash
-- [x] Phase 4 first-pass character-specific armor, headwear, heraldic details, native-part swords, nameplates, and procedural R6/R15 combat poses
-- [ ] Authored custom 3D champion meshes, historically researched full costumes, and bespoke animation assets
-- [x] Server-validated eight-champion selection menu
-- [x] Automatic 1v1 round lifecycle, countdown, elimination, results, wins, and coin rewards
-- [x] Charged signature strike with desktop R key and generated touch action, champion-colored signature effects
-- [ ] Bespoke champion signature animations, custom 3D meshes, audio, extra maps, and final mobile polish
-- [ ] Persistence and release hardening
+## What is included
 
-## Install and sync
+- **Eight champions:** Salahuddin, Baldwin IV, Reynald, Guy, Balian, Nur ad-Din, Shirkuh and Tâcülmülûk Böri.
+- **Medieval desert arena:** circular stone fighting floor, fortress walls, corner towers, gate, banners, braziers, spawn platforms and decorative floor inlays.
+- **1v1 queue:** the first two players in a server duel; additional players wait as spectators for the next round.
+- **Combat:** light combo chain, heavy strike, stamina, block, parry timing, dodge invulnerability, signature strike, hit feedback and server-side hit validation.
+- **Round loop:** intermission, duel timer, elimination, winner/draw result, wins, coins and XP.
+- **Progression:** player Coins, Wins, XP and Level. Profiles are saved with Roblox DataStores when the experience is published and API access is enabled.
+- **Field Guide:** an in-game guide to controls, champion backgrounds and a short 12th-century timeline. It clearly identifies the arena duels as fictionalized gameplay rather than historical events.
+- **Champion presentation:** stylized armour, headwear, shields, native-part swords, nameplates and procedural R6/R15 combat poses.
 
-1. Download this repository branch: `roblox/phase-4-champions` as a ZIP and extract it to a **new folder**. Do not overwrite your earlier Phase 1/2 backup.
-2. Open the extracted `roblox` folder in PowerShell.
-3. Run `rojo serve default.project.json` (or `.\rojo.exe serve default.project.json` if Rojo is in that folder).
-4. Open your saved Roblox Studio place or a Baseplate. Connect the Rojo plugin to `localhost:34872`.
-5. Press Play. The server should generate the arena and initialize the combat remotes. Keep the PowerShell Rojo window open while testing.
+## Install and run locally
 
-If the Rojo executable is not found, use the same Rojo 7.x executable you already installed and run the command from the extracted `roblox` directory. Do not run it from `C:\\Windows\\System32`.
+### 1. Download the one final package
+
+Download the **HistoricalChampions-Roblox-Final** ZIP artifact from the latest successful GitHub Actions run for the `roblox/final-master-release` branch. Extract it once. You should have a single project folder containing:
+
+- `default.project.json`
+- `src\`
+- `README.md`
+
+Do not extract older Phase 1–5 folders or combine this folder with an older project.
+
+### 2. Start Rojo
+
+Open PowerShell inside the folder that contains `default.project.json`. Run:
+
+```powershell
+& "D:\historical-champions-roblox-phase-1-foundation\roblox\rojo.exe" serve default.project.json
+```
+
+Keep this PowerShell window open. Rojo listens on `localhost:34872`.
+
+### 3. Connect Roblox Studio
+
+1. Open the Roblox Studio place you use for Historical Champions (or a new Baseplate place for a clean test).
+2. Open the Rojo plugin and connect to `localhost:34872`.
+3. Wait for the Rojo sync to finish. The Output window should not show a project JSON parse error.
+4. Press **Play**. The server generates the arena and initializes the game systems.
+
+### 4. Test multiplayer
+
+Use **Test → Start** with **2 Players** in Studio. A normal solo Play session will show the lobby and wait for another player. In a two-player test, the first two players enter the duel after the intermission countdown.
 
 ## Controls
 
-- **Z** or left mouse button: light attack (up to a 3-hit chain)
-- **X** or right mouse button: heavy attack
-- **C** or Left Shift: dodge
-- **Hold V** or **F**: block; the first short portion of a block is a parry window
-- Mobile buttons are generated by ContextActionService.
+| Action | Desktop |
+|---|---|
+| Move | WASD / arrow keys |
+| Jump | Space |
+| Light attack | Z / left mouse |
+| Heavy attack | X / right mouse |
+| Block / parry | Hold V or F |
+| Dodge | C / Left Shift |
+| Signature strike | R when Power reaches 100% |
 
-## Phase 4 character presentation
+Touch buttons are generated for supported mobile devices. Landscape orientation gives more room for the arena and combat controls.
 
-- Each player receives a default fighter from the existing eight-character roster so local multiplayer tests can display different visual profiles.
-- Server-generated gear includes a themed surcoat, cloak, chest decoration, shoulder guards, bracers, headwear, and nameplate.
-- Each champion has a different palette and a first-pass sword profile. Swords are native Roblox Parts welded to the right hand.
-- A client script responds to server-broadcast attacks, blocks, dodges, hits, and parries. It poses R6/R15 shoulder and waist joints and enables a sword trail during attacks.
-- These are editable procedural assets/poses, not final sculpted meshes or hand-authored animation clips. Later art work should replace them with custom meshes and published animation assets.
+## Persistent data before publishing
 
-## Phase 3 combat notes
+DataStore access may be unavailable in an unpublished local test. Before expecting saved Coins, Wins, XP, Level and champion selection:
 
-- The client sends action names only. The server validates action rate, cooldowns, character state, attack range, facing, stamina, blocking, parry timing, and dodge invulnerability.
-- Hit detection uses a server-side spatial box in front of the attacker's character. Damage values and targets are never accepted from the client.
-- A successful light chain increases damage across its three steps. Heavy attacks cost more stamina and have a longer wind-up.
-- Blocking reduces frontal damage and consumes stamina. A depleted guard causes a guard break. Dodging briefly grants server-controlled invulnerability.
-- The HUD and impact effects are client-side presentation only; they do not decide combat results.
+1. Publish the Roblox experience from Studio.
+2. Open **Game Settings → Security**.
+3. Enable **Studio Access to API Services** only if you also want DataStore testing from Studio.
+4. Test by leaving and rejoining a published test server.
 
-## Important scope limits
+If DataStore access fails, the game continues with session-only stats and logs a warning; the combat round does not depend on profile storage.
 
-This is a gameplay and visual prototype, not final production art. The current phase does generate champion-themed armour pieces, headwear, shields, nameplates, and hand-held swords from native Roblox Parts, and plays procedural R6/R15 joint poses in response to combat events. These first-pass models are deliberately stylized and may need rig-specific position tuning. They are not sculpted custom meshes or professionally authored animation clips; those still require a separate 3D art/animation pass and published animation assets. Two-client Studio testing is required to validate sword placement, visible arm movement, hitbox reach, parry timing, knockback, touch controls, and performance.
+## Release checklist
 
-## Phase 5 test checklist\n\n- [ ] Select each of the eight champions; verify the correct visual profile updates.\n- [ ] Start a two-client test and confirm both fighters spawn on opposite sides.\n- [ ] Confirm intermission countdown, fight timer, elimination, results, and next-round reset.\n- [ ] Confirm Wins and Coins update for participation and the winner.\n- [ ] Land hits until Power reaches 100%; use R / SPECIAL and confirm the stronger strike.\n- [ ] Confirm champion selection is hidden during the active round and returns after results.\n- [ ] Confirm each champion produces its own signature color, impact burst, and expanding energy ring.\n- [ ] Test touch controls and the selection panel at phone aspect ratios.\n\n## Test checklist
+- Run a two-player Studio test and verify the countdown, opposing spawns, combat, elimination, results and next round.
+- Test every combat action from both clients.
+- Check the Field Guide and champion-selection panel on desktop and a phone/tablet aspect ratio.
+- Publish a private test first, verify DataStore persistence, then open public access.
+- Use only assets and audio for which you have upload and commercial-use rights.
 
-- [ ] Rojo connects without parse or sync errors.
-- [ ] Workspace contains `HistoricalChampionsArena`.
-- [ ] Both players can spawn in the arena.
-- [ ] With two test clients, face each other and test light combo, heavy attack, block, parry, dodge, and stamina depletion/regeneration.
-- [ ] Verify a player behind the defender is not hit by a frontal guard.
-- [ ] Verify both players receive different champion outfits and visible swords in their right hands.
-- [ ] Verify sword swings, blocking poses, dodge poses, and hit reactions are visible on both clients.
-- [ ] Verify no server errors appear in Output.
-- [ ] Check keyboard/mouse controls and touch action buttons on a phone or emulator.
+## Art and historical accuracy limits
 
-## Security and release notes
+The current fighters are **stylized procedural Roblox builds** made from parts, welds and joint transforms. They are not bespoke sculpted 3D meshes or professionally authored animation clips. The armour palettes and some equipment are visual interpretations, not verified reconstructions of each person's exact kit. The Field Guide separates documented events from the fictional arena format. More detailed custom character models, researched clothing, recorded sound and hand-authored animations would require a dedicated asset/animation pass and Roblox asset uploads.
 
-- Server owns health, damage, stamina, cooldowns, block state, and currency.
-- Clients may request actions; they never submit damage amounts or target instances.
-- Recheck all historical depictions, supplied art/audio licensing, mobile behavior, and multiplayer exploits before public release.
+## Known external requirements
 
-
-## Phase 5 gameplay systems\n\n- A champion-selection panel lets players choose among all eight roster entries; the server validates the requested name and locks selection during an active round.\n- MatchService waits for two players, runs an intermission countdown, teleports fighters to opposing arena spawns, tracks eliminations, declares a winner/draw, and awards Wins and Coins.\n- A full Power meter enables a stronger signature strike. Successful hits charge Power; press **R** or use the generated **SPECIAL** touch button.\n- A compact round HUD displays waiting/intermission/fight/results states and the countdown.\n- Eliminated players cannot send combat actions until the round ends.\n\n## Phase 4 test notes
-
-- The default fighter is assigned using each player's UserId so two-player Studio tests can show different visual profiles. This is temporary; a proper character-selection screen is still planned.
-- Sword grip offsets and procedural joint poses may need small rig-specific adjustments after Studio testing.
-- Keep the earlier Phase 3 ZIP and Studio backup until the new gear and weapons are verified.
-\n\n## Phase 5 setup note\n\nUse the `roblox/phase-5-gameplay` branch ZIP for the latest complete gameplay prototype. It includes all Phase 4 source plus the match, selection, HUD, and signature systems. Keep it on a separate Studio test place until the checklist passes.\n
+- Roblox Studio and the Rojo plugin are required to run and publish the experience.
+- A Rojo executable is required for local sync.
+- DataStore saving requires a published Roblox experience with appropriate API access.
+- This repository branch has not been executed inside your local Roblox Studio session. Complete the two-player release checklist before calling the public release verified.
