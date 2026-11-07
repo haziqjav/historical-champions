@@ -1,4 +1,4 @@
--- Server bootstrap. The server owns player state, progression, combat, and match results.
+-- Server bootstrap. Keep independent systems alive even if optional arena construction fails.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -75,16 +75,28 @@ end
 local ProgressionService = require(script.Parent:WaitForChild("ProgressionService"))
 ProgressionService.Init()
 
-local ArenaBuilder = require(script.Parent:WaitForChild("ArenaBuilder"))
-ArenaBuilder.Build()
+-- Initialize character visuals before arena construction. If map generation
+-- fails, players should still receive their champion gear and nameplates.
+local CharacterVisuals = require(script.Parent:WaitForChild("CharacterVisuals"))
+CharacterVisuals.Init()
 
 local CombatService = require(script.Parent:WaitForChild("CombatService"))
 CombatService.Init(actionRequest, actionFeedback)
 
-local CharacterVisuals = require(script.Parent:WaitForChild("CharacterVisuals"))
-CharacterVisuals.Init()
-
 local MatchService = require(script.Parent:WaitForChild("MatchService"))
 MatchService.Init(remotes)
 
-print("[HistoricalChampions] Final master gameplay systems initialized.")
+-- A map-generation error is logged with its full traceback instead of silently
+-- preventing character visuals, combat and match systems from initializing.
+local ArenaBuilder = require(script.Parent:WaitForChild("ArenaBuilder"))
+local ok, err = xpcall(function()
+    ArenaBuilder.Build()
+end, debug.traceback)
+
+if not ok then
+    warn("[HistoricalChampions] ARENA BUILD FAILED:\n" .. tostring(err))
+else
+    print("[HistoricalChampions] Arena generation completed.")
+end
+
+print("[HistoricalChampions] Server bootstrap completed.")
