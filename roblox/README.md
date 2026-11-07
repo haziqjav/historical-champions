@@ -51,7 +51,7 @@ If the Rojo executable is not found, use the same Rojo 7.x executable you alread
 
 ## Important scope limits
 
-This is a gameplay prototype and first feedback pass, not final production combat. Roblox Studio testing with **two clients** is still required to tune hitbox reach, parry timing, knockback, touch controls, and performance. The code does not create the eight custom champion meshes, historical armor, bespoke swords, or polished animation assets. Those require separate 3D rig/model work and published animation assets. The current generated slashes are visual cues, not sword models or hand-authored attack animations.
+This is a gameplay and visual prototype, not final production art. The current phase does generate champion-themed armour pieces, headwear, shields, nameplates, and hand-held swords from native Roblox Parts, and plays procedural R6/R15 joint poses in response to combat events. These first-pass models are deliberately stylized and may need rig-specific position tuning. They are not sculpted custom meshes or professionally authored animation clips; those still require a separate 3D art/animation pass and published animation assets. Two-client Studio testing is required to validate sword placement, visible arm movement, hitbox reach, parry timing, knockback, touch controls, and performance.
 
 ## Test checklist
 
