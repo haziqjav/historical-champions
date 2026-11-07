@@ -1,34 +1,39 @@
-# Technical audit — 2026-11-03
+# Historical Champions — Final Roblox Build Audit
 
-## Existing product
-The default branch `main` is a React 19 + TypeScript + Vite 2.5D fighting game, with Canvas combat simulation, Web Audio and Capacitor Android packaging. It is not a Roblox Studio place/project. The existing engine uses a deterministic fixed timestep and its current flow includes character selection, narrative intro, combat, victory and defeat.
+## Consolidated project
 
-### Existing content inventory
-- Eight fighters: Salahuddin, Baldwin IV, Reynald, Guy, Balian, Nooruddin, Shirkuh and Bori.
-- Five arena references: Hattin, Kerak, Marj Ayyun, Belvoir Castle and Montgisard.
-- Character idle/attack sprites, individual voice clips, 28 matchup narrations, theme music and sword SFX.
-- Automated checks: TypeScript typecheck, Vitest combat/layout tests, production build and asset-manifest verification.
+This branch combines the Roblox work into one installable Rojo project. The original React/TypeScript browser and Android edition remains separate and has not been modified by the Roblox build.
 
-## Risks and findings
-1. **Different runtime:** React/TypeScript/Canvas assets cannot become a working Roblox game by upload. Roblox needs Luau, Roblox character rigs, animations, physics, UI and a place file.
-2. **Multiplayer authority:** the original single-player simulation cannot be trusted for multiplayer. Roblox server must own health, hit validation, cooldowns, rewards and match results.
-3. **Asset conversion:** existing PNGs are 2D sprites, not 3D fighter rigs. They can inform portraits/UI or licensed decals; 3D models and animations need Roblox-compatible creation or licensing.
-4. **Commercial rights:** the existing repository flags ownership/licences for art, voices, narrations, music and sword SFX as unverified. Do not monetize or upload questionable assets until rights are documented. A TV-series soundtrack in the supplied archive was intentionally excluded from the original game.
-5. **Archive limitation:** the supplied RAR v5 file is present, but this environment has no RAR extraction utility. Its file listing was inspected; this stage does not claim to have extracted or imported its binary assets.
-6. **Secrets:** never put API keys in Roblox client code. No AI service is needed for the first multiplayer slice.
-7. **Persistence and purchases:** DataStore, matchmaking, paid products and ranked rewards are deferred until match lifecycle and exploit resistance are tested.
+## Included systems
 
-## Roblox phase 1 delivered on this branch
-- Rojo project mapping and setup guide.
-- Shared combat/progression constants and the original eight fighter identifiers.
-- Server bootstrap, remotes, leaderstats, and server-authoritative prototype light/heavy attack, block and dodge handling.
-- Client keyboard and mobile action bindings.
+- Generated medieval desert fortress arena with opposing spawn pads.
+- Eight champion profiles with stylized native-part armour, shields, swords and nameplates.
+- Procedural R6/R15 combat poses, sword trails and client-side combat feedback.
+- Server-owned light and heavy attacks, combo state, stamina, block, parry timing, dodge, signature strike and hit validation.
+- 1v1 match queue, intermission, duel timer, elimination, results and rewards.
+- Players beyond the first two wait in the server queue and cannot interfere with the active duel.
+- Coins, Wins, XP and Level leaderboard values.
+- DataStore profile saving for Coins, Wins, XP and selected champion.
+- Field Guide with controls, champion summaries and historical timeline.
 
-## Known limitations — not a release build
-- No authored arena, custom fighter rigs, animations, combat HUD, character select, matchmaking, round state or DataStore persistence.
-- No strict two-player lobby enforcement yet; combat currently targets the nearest other player. A match controller must enforce 1v1 before public testing.
-- Roblox Studio execution and two-client playtest have not been run in this environment. Sync into Studio and test before calling this phase verified.
-- Prototype hit detection uses distance/facing checks; add line-of-sight, wind-up/hit windows, spawn protection and match-state validation before release.
+## Static checks completed
 
-## Original edition protection
-All Roblox work is isolated under `roblox/` on branch `roblox/phase-1-foundation`. No existing app files on `main` were edited.
+- The GitHub Actions packaging workflow completed successfully.
+- The workflow parsed `default.project.json` as valid JSON.
+- It checked for required Luau entry-point files and created a Roblox-only ZIP package.
+- The generated ZIP was downloaded and its archive integrity was checked.
+
+## Checks not completed
+
+The project has not been executed in the user's Roblox Studio session. Static packaging is not proof that every Luau script, animation pose, device layout, physics interaction or multiplayer state works without a runtime issue. A two-player Studio test and a published private-server test remain necessary before public release.
+
+## Art and historical scope
+
+Fighters are stylized procedural builds assembled from Roblox parts and welds. They are not custom sculpted meshes or professionally authored animation clips. The Field Guide distinguishes documented people and events from the fictionalized arena-duel format. Specific equipment, colours, face designs and signature moves are artistic choices unless identified otherwise.
+
+## Release requirements
+
+- Open the project through Rojo in Roblox Studio.
+- Complete the included two-player test checklist in the README.
+- Publish a private test experience and enable the required API access before expecting DataStore persistence.
+- Confirm rights to any external assets or audio before uploading or monetizing them.
