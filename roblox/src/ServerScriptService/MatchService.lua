@@ -83,6 +83,8 @@ local function award(winner, participants)
                 end
                 if xp then
                     local level = math.floor(xp.Value / GameConfig.Progression.XPPerLevel) + 1
+                    local levelStat = stats:FindFirstChild("Level")
+                    if levelStat then levelStat.Value = level end
                     player:SetAttribute("Level", level)
                 end
             end
